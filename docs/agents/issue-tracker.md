@@ -33,6 +33,10 @@ Create a GitHub issue.
 
 Run `gh issue view <number> --comments`.
 
+## When `/to-tickets` publishes from a spec issue
+
+Link each ticket to the spec as a GitHub **sub-issue**, in addition to its native blocking edges. The `## Parent` text section alone is not enough. Add the link with `gh api --method POST repos/<owner>/<repo>/issues/<spec>/sub_issues -F sub_issue_id=<ticket-db-id>`, where `<ticket-db-id>` is the ticket's numeric **database id** (`gh api repos/<owner>/<repo>/issues/<n> --jq .id`, _not_ the `#number`). Verify with `gh api repos/<owner>/<repo>/issues/<spec>/sub_issues --jq '[.[].number]'`.
+
 ## Wayfinding operations
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
