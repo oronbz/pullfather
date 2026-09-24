@@ -32,7 +32,7 @@ private struct FooterRow: View {
             .padding(.horizontal, 10)
             .frame(height: 28)
             .contentShape(.rect)
-            .background(isHovered ? Palette.rowHighlight : .clear, in: .rect(cornerRadius: 7))
+            .background(isHovered ? Palette.rowHighlight : .clear, in: .rect(cornerRadius: Noir.rowRadius))
         }
         .buttonStyle(.plain)
         .keyboardShortcut(KeyEquivalent(key), modifiers: .command)

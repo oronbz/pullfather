@@ -5,6 +5,7 @@ enum Palette {
     static let commitRed = Color(hex: 0xB3202A)
     static let brass = Color(hex: 0xC9A45C)
     static let surface = Color(hex: 0x211B19, opacity: 0.94)
+    static let windowSurface = Color(hex: 0x211B19)
     static let textPrimary = Color(hex: 0xF2E9DA)
     static let textSecondary = Color(hex: 0xB8AB98)
     static let textMuted = Color(hex: 0x9C9083)

@@ -12,13 +12,17 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var hostingView: NSHostingView<PanelView>!
     private var panel: NoirPanel!
 
-    init(actions: PanelActions) {
+    init(account: Account, actions: PanelActions) {
         super.init()
-        hostingView = NSHostingView(rootView: PanelView(actions: PanelActions(
-            openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
-            openSettings: { [weak self] in actions.openSettings(); self?.close() },
-            quit: actions.quit
-        )))
+        hostingView = NSHostingView(rootView: PanelView(
+            account: account,
+            actions: PanelActions(
+                openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
+                openSettings: { [weak self] in actions.openSettings(); self?.close() },
+                quit: actions.quit
+            ),
+            onHeightChange: { [weak self] _ in self?.contentHeightChanged() }
+        ))
         panel = NoirPanel(contentView: hostingView)
         panel.delegate = self
         panel.onCancel = { [weak self] in self?.close() }
@@ -36,14 +40,26 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func open() {
-        guard let button = statusItem.button, let buttonWindow = button.window, let screen = buttonWindow.screen else { return }
-        let anchor = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
-        let frame = PanelPlacement.frame(below: anchor, contentHeight: hostingView.fittingSize.height, within: screen.visibleFrame)
-        panel.setFrame(frame, display: true)
+        guard layout() else { return }
         NSApp.activate()
         panel.makeKeyAndOrderFront(nil)
         panel.invalidateShadow()
-        button.highlight(true)
+        statusItem.button?.highlight(true)
+    }
+
+    @discardableResult
+    private func layout() -> Bool {
+        guard let button = statusItem.button, let buttonWindow = button.window, let screen = buttonWindow.screen else { return false }
+        let anchor = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        let frame = PanelPlacement.frame(below: anchor, contentHeight: hostingView.fittingSize.height, within: screen.visibleFrame)
+        panel.setFrame(frame, display: true)
+        return true
+    }
+
+    private func contentHeightChanged() {
+        guard panel.isVisible else { return }
+        layout()
+        panel.invalidateShadow()
     }
 
     private func close() {
