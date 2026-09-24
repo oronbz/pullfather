@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct PanelHeader: View {
+    let isSyncing: Bool
+    let refresh: () -> Void
+
     var body: some View {
         HStack(spacing: 8) {
             Image(nsImage: NSApp.applicationIconImage)
@@ -15,9 +18,10 @@ struct PanelHeader: View {
                     .foregroundStyle(Palette.textSecondary)
             }
             Spacer(minLength: 0)
-            Button {} label: {
+            Button(action: refresh) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 13, weight: .medium))
+                    .symbolEffect(.rotate, options: .repeat(.continuous), isActive: isSyncing)
                     .frame(width: 28, height: 28)
                     .contentShape(.rect)
             }

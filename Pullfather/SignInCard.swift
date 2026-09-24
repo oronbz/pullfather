@@ -17,18 +17,7 @@ struct SignInCard: View {
     }
 }
 
-struct SignedInLine: View {
-    let login: String?
-
-    var body: some View {
-        Text(Self.text(for: login))
-            .font(.system(size: 13))
-            .foregroundStyle(Palette.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-    }
-
+enum SignedInLine {
     static func text(for login: String?) -> String {
         login.map { "Signed in as @\($0)" } ?? "Signed in"
     }

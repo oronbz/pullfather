@@ -11,16 +11,19 @@ final class Account {
     typealias MakeTransport = @Sendable (String) -> any GitHubTransport
 
     private(set) var state: State
+    private(set) var token: String?
     private(set) var isValidating = false
     private(set) var signInError: String?
 
     @ObservationIgnored private let tokenStore: TokenStore
-    @ObservationIgnored private let makeTransport: MakeTransport
+    @ObservationIgnored let makeTransport: MakeTransport
 
     init(tokenStore: TokenStore, makeTransport: @escaping MakeTransport) {
         self.tokenStore = tokenStore
         self.makeTransport = makeTransport
-        state = tokenStore.load() == nil ? .signedOut : .signedIn(login: nil)
+        let token = tokenStore.load()
+        self.token = token
+        state = token == nil ? .signedOut : .signedIn(login: nil)
     }
 
     @discardableResult
@@ -33,6 +36,7 @@ final class Account {
         do {
             let login = try await viewerLogin(token: token)
             try tokenStore.save(token)
+            self.token = token
             state = .signedIn(login: login)
             return true
         } catch let failure as GitHubFailure {
@@ -44,7 +48,7 @@ final class Account {
     }
 
     func restore() async {
-        guard let token = tokenStore.load(), let login = try? await viewerLogin(token: token) else { return }
+        guard let token, let login = try? await viewerLogin(token: token) else { return }
         if state == .signedIn(login: nil) {
             state = .signedIn(login: login)
         }
@@ -57,6 +61,7 @@ final class Account {
     func signOut() {
         do {
             try tokenStore.remove()
+            token = nil
             signInError = nil
             state = .signedOut
         } catch {

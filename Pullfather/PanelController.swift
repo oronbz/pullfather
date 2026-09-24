@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 
 struct PanelActions {
+    var openPullRequest: (URL) -> Void
     var openGitHub: () -> Void
     var openSettings: () -> Void
     var quit: () -> Void
@@ -11,12 +12,16 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var hostingView: NSHostingView<PanelView>!
     private var panel: NoirPanel!
+    private let store: SyncStore
+    private var countUpdates: Task<Void, Never>?
 
-    init(account: Account, actions: PanelActions) {
+    init(store: SyncStore, actions: PanelActions) {
+        self.store = store
         super.init()
         hostingView = NSHostingView(rootView: PanelView(
-            account: account,
+            store: store,
             actions: PanelActions(
+                openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
                 openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
                 openSettings: { [weak self] in actions.openSettings(); self?.close() },
                 quit: actions.quit
@@ -30,8 +35,14 @@ final class PanelController: NSObject, NSWindowDelegate {
         if let button = statusItem.button {
             button.image = NSImage(resource: .menuBarIcon)
             button.image?.accessibilityDescription = "The Pullfather"
+            button.imagePosition = .imageLeading
             button.target = self
             button.action = #selector(toggle)
+        }
+        countUpdates = Task { [weak self] in
+            for await count in Observations({ store.countText }) {
+                self?.statusItem.button?.title = count ?? ""
+            }
         }
     }
 
@@ -41,6 +52,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     private func open() {
         guard layout() else { return }
+        store.requestSync()
         NSApp.activate()
         panel.makeKeyAndOrderFront(nil)
         panel.invalidateShadow()

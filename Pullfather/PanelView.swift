@@ -1,23 +1,38 @@
 import SwiftUI
 
 struct PanelView: View {
-    let account: Account
+    let store: SyncStore
     let actions: PanelActions
     var onHeightChange: (CGFloat) -> Void = { _ in }
     private let cornerRadius: CGFloat = 12
+    @State private var headerHeight: CGFloat = 0
+    @State private var footerHeight: CGFloat = 0
+    @State private var contentHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            PanelHeader()
-            Hairline()
-            switch account.state {
-            case .signedOut:
-                SignInCard(account: account)
-            case .signedIn(let login):
-                SignedInLine(login: login)
+            VStack(spacing: 0) {
+                PanelHeader(isSyncing: store.isSyncing, refresh: { store.requestSync() })
+                Hairline()
             }
-            Hairline()
-            PanelFooter(actions: actions)
+            .onGeometryChange(for: CGFloat.self, of: \.size.height) { headerHeight = $0 }
+            switch store.account.state {
+            case .signedOut:
+                SignInCard(account: store.account)
+            case .signedIn:
+                ScrollView {
+                    BusinessSection(rows: store.business, open: actions.openPullRequest)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 10)
+                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { contentHeight = $0 }
+                }
+                .frame(height: min(contentHeight, PanelPlacement.maxHeight - headerHeight - footerHeight))
+            }
+            VStack(spacing: 0) {
+                Hairline()
+                PanelFooter(actions: actions)
+            }
+            .onGeometryChange(for: CGFloat.self, of: \.size.height) { footerHeight = $0 }
         }
         .frame(width: PanelPlacement.width)
         .background(Palette.surface, in: .rect(cornerRadius: cornerRadius))
@@ -39,9 +54,25 @@ private struct Hairline: View {
     }
 }
 
-#Preview {
+#if DEBUG
+#Preview("Signed out") {
     PanelView(
-        account: .preview(signedIn: false),
-        actions: PanelActions(openGitHub: {}, openSettings: {}, quit: {})
+        store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
+        actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
+
+#Preview("Business") {
+    PanelView(
+        store: .preview(business: BusinessRow.previews),
+        actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+    )
+}
+
+#Preview("Empty") {
+    PanelView(
+        store: .preview(business: []),
+        actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+    )
+}
+#endif

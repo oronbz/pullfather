@@ -3,15 +3,17 @@ import SwiftUI
 
 final class SettingsWindowController {
     private let account: Account
+    private let preferences: Preferences
     private let launchAtLogin: LaunchAtLogin
 
-    init(account: Account, launchAtLogin: LaunchAtLogin) {
+    init(account: Account, preferences: Preferences, launchAtLogin: LaunchAtLogin) {
         self.account = account
+        self.preferences = preferences
         self.launchAtLogin = launchAtLogin
     }
 
     private lazy var window: NSWindow = {
-        let controller = NSHostingController(rootView: SettingsView(account: account, launchAtLogin: launchAtLogin))
+        let controller = NSHostingController(rootView: SettingsView(account: account, preferences: preferences, launchAtLogin: launchAtLogin))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "Settings"
@@ -34,6 +36,7 @@ final class SettingsWindowController {
 
 struct SettingsView: View {
     let account: Account
+    let preferences: Preferences
     let launchAtLogin: LaunchAtLogin
 
     var body: some View {
@@ -43,6 +46,7 @@ struct SettingsView: View {
                 .foregroundStyle(Palette.textPrimary)
                 .padding(.horizontal, 10)
             AccountPane(account: account)
+            BusinessPane(preferences: preferences)
             GeneralPane(launchAtLogin: launchAtLogin)
         }
         .padding(.horizontal, 20)
@@ -87,6 +91,28 @@ private struct AccountPane: View {
     }
 }
 
+private struct BusinessPane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Business") {
+            NoirRow {
+                Text("Show first")
+                Spacer()
+                Picker("Show first", selection: $preferences.businessOrder) {
+                    Text("Newest").tag(BusinessOrder.newestFirst)
+                    Text("Longest waiting").tag(BusinessOrder.oldestFirst)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .tint(Palette.commitRed)
+                .fixedSize()
+            }
+        }
+    }
+}
+
 private struct GeneralPane: View {
     let launchAtLogin: LaunchAtLogin
 
@@ -121,12 +147,12 @@ private struct GeneralPane: View {
 }
 
 #Preview("Signed out") {
-    SettingsView(account: .preview(signedIn: false), launchAtLogin: LaunchAtLogin())
+    SettingsView(account: .preview(signedIn: false), preferences: .preview, launchAtLogin: LaunchAtLogin())
         .frame(minHeight: 370, maxHeight: .infinity, alignment: .top)
         .background(Palette.windowSurface)
 }
 
 #Preview("Signed in") {
-    SettingsView(account: .preview(signedIn: true), launchAtLogin: LaunchAtLogin())
+    SettingsView(account: .preview(signedIn: true), preferences: .preview, launchAtLogin: LaunchAtLogin())
         .fixedSize()
 }

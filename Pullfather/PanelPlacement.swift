@@ -2,6 +2,7 @@ import CoreGraphics
 
 enum PanelPlacement {
     static let width: CGFloat = 384
+    static let maxHeight: CGFloat = 600
     static let gap: CGFloat = 6
     static let screenMargin: CGFloat = 8
 
