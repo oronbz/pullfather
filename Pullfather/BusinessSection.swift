@@ -14,7 +14,10 @@ struct BusinessSection: View {
             PanelRow(help: row.title, action: { open(row.url) }) {
                 InitialsAvatar(login: row.author)
                 RowText(title: row.title, metadata: row.metadata)
-                Spacer(minLength: 0)
+                Spacer(minLength: 8)
+                if let checks = row.checks {
+                    ChecksIcon(checks: checks)
+                }
             }
         }
     }

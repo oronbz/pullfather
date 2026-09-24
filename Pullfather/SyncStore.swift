@@ -10,6 +10,7 @@ struct BusinessRow: Identifiable, Equatable {
     let author: String
     let waitingSince: Date
     let waitingTime: String
+    let checks: Checks?
 
     var metadata: String {
         "\(repository) #\(number) · \(waitingTime)"
@@ -25,6 +26,7 @@ struct FamilyRow: Identifiable, Equatable {
     let lastActivity: String
     let isDraft: Bool
     let reviewState: ReviewState?
+    let checks: Checks?
 
     var metadata: String {
         "\(repository) #\(number) · \(lastActivity)"
@@ -107,7 +109,8 @@ final class SyncStore {
                     repository: pullRequest.repository,
                     author: pullRequest.author,
                     waitingSince: waitingSince,
-                    waitingTime: RelativeTime.format(waitingSince, relativeTo: now)
+                    waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
+                    checks: pullRequest.checks
                 )
             }
             .sorted { ($0.waitingSince, $0.number) < ($1.waitingSince, $1.number) }
@@ -122,7 +125,8 @@ final class SyncStore {
                     repository: pullRequest.repository,
                     lastActivity: RelativeTime.format(pullRequest.updatedAt, relativeTo: now),
                     isDraft: pullRequest.isDraft,
-                    reviewState: pullRequest.reviewState
+                    reviewState: pullRequest.reviewState,
+                    checks: pullRequest.checks
                 )
             }
     }
@@ -132,24 +136,24 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", waitingSince: .now, waitingTime: "2h"),
+                    repository: "corleone/olive-oil", author: "mike-corleone", waitingSince: .now, waitingTime: "2h", checks: .passing),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", waitingSince: .now, waitingTime: "5h"),
+                    repository: "corleone/casino", author: "sonny", waitingSince: .now, waitingTime: "5h", checks: .running),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", waitingSince: .now, waitingTime: "1d"),
+                    repository: "corleone/casino", author: "luca-brasi", waitingSince: .now, waitingTime: "1d", checks: .failing),
     ]
 }
 
 extension FamilyRow {
     static let previews = [
         FamilyRow(id: "6", number: 97, title: "Sketch the olive oil import pipeline", url: URL(string: "https://github.com/corleone/olive-oil/pull/97")!,
-                  repository: "corleone/olive-oil", lastActivity: "30m", isDraft: true, reviewState: nil),
+                  repository: "corleone/olive-oil", lastActivity: "30m", isDraft: true, reviewState: nil, checks: nil),
         FamilyRow(id: "5", number: 1084, title: "Refactor push routing", url: URL(string: "https://github.com/corleone/casino/pull/1084")!,
-                  repository: "corleone/casino", lastActivity: "1d", isDraft: false, reviewState: .changesRequested),
+                  repository: "corleone/casino", lastActivity: "1d", isDraft: false, reviewState: .changesRequested, checks: .failing),
         FamilyRow(id: "4", number: 1079, title: "Add offline banner", url: URL(string: "https://github.com/corleone/casino/pull/1079")!,
-                  repository: "corleone/casino", lastActivity: "3d", isDraft: false, reviewState: .approved),
+                  repository: "corleone/casino", lastActivity: "3d", isDraft: false, reviewState: .approved, checks: .passing),
         FamilyRow(id: "7", number: 1102, title: "Tidy up the casino ledger", url: URL(string: "https://github.com/corleone/casino/pull/1102")!,
-                  repository: "corleone/casino", lastActivity: "1w", isDraft: false, reviewState: nil),
+                  repository: "corleone/casino", lastActivity: "1w", isDraft: false, reviewState: nil, checks: .running),
     ]
 }
 

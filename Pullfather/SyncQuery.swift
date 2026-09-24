@@ -16,6 +16,21 @@ nonisolated enum ReviewState: String, Equatable, Sendable {
     case changesRequested = "CHANGES_REQUESTED"
 }
 
+nonisolated enum Checks: Equatable, Sendable {
+    case passing
+    case running
+    case failing
+
+    init?(rollupState: String) {
+        switch rollupState {
+        case "SUCCESS": self = .passing
+        case "PENDING", "EXPECTED": self = .running
+        case "FAILURE", "ERROR": self = .failing
+        default: return nil
+        }
+    }
+}
+
 nonisolated struct PullRequest: Equatable, Sendable {
     let id: String
     let number: Int
@@ -27,6 +42,7 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let updatedAt: Date
     let isDraft: Bool
     let reviewState: ReviewState?
+    let checks: Checks?
     let reviewRequests: [ReviewRequest]
 
     func waitingSince(viewer: String) -> Date {
@@ -84,6 +100,13 @@ nonisolated enum SyncQuery {
           reviewDecision
           repository { nameWithOwner }
           author { login }
+          commits(last: 1) {
+            nodes {
+              commit {
+                statusCheckRollup { state }
+              }
+            }
+          }
         }
         """
 
@@ -138,6 +161,26 @@ nonisolated enum SyncQuery {
             let login: String
         }
 
+        struct Commits: Decodable {
+            struct Node: Decodable {
+                let commit: Commit
+            }
+
+            struct Commit: Decodable {
+                let statusCheckRollup: StatusCheckRollup?
+            }
+
+            struct StatusCheckRollup: Decodable {
+                let state: String
+            }
+
+            let nodes: [Node]
+
+            var checks: Checks? {
+                nodes.last?.commit.statusCheckRollup.flatMap { Checks(rollupState: $0.state) }
+            }
+        }
+
         struct Timeline: Decodable {
             let nodes: [ReviewRequestedEvent]
         }
@@ -170,6 +213,7 @@ nonisolated enum SyncQuery {
         let reviewDecision: String?
         let repository: Repository
         let author: Author?
+        let commits: Commits
         let timelineItems: Timeline?
 
         var pullRequest: PullRequest {
@@ -184,6 +228,7 @@ nonisolated enum SyncQuery {
                 updatedAt: updatedAt,
                 isDraft: isDraft,
                 reviewState: reviewDecision.flatMap(ReviewState.init),
+                checks: commits.checks,
                 reviewRequests: (timelineItems?.nodes ?? []).map {
                     ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
                 }

@@ -46,7 +46,7 @@ struct TokenForm: View {
                 .onChange(of: token) { account.dismissSignInError() }
 
             if TokenStore.isFineGrained(token.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                Notice(symbol: "exclamationmark.triangle.fill", color: Palette.checksRunning,
+                Notice(symbol: "exclamationmark.triangle.fill", color: Palette.amber,
                        text: "Fine-grained tokens cover only one owner. Pull requests from other owners won't show up.")
             }
             if let error = account.signInError {

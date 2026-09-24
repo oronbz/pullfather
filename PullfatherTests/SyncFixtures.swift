@@ -20,6 +20,7 @@ nonisolated enum SyncFixtures {
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/olive-oil" },
               "author": { "login": "mike-corleone" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS" } } }] },
               "timelineItems": {
                 "nodes": [
                   {
@@ -44,6 +45,7 @@ nonisolated enum SyncFixtures {
               "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "sonny" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "PENDING" } } }] },
               "timelineItems": {
                 "nodes": [
                   {
@@ -64,6 +66,7 @@ nonisolated enum SyncFixtures {
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "luca-brasi" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "FAILURE" } } }] },
               "timelineItems": { "nodes": [] }
             }
           ]
@@ -80,7 +83,8 @@ nonisolated enum SyncFixtures {
               "isDraft": false,
               "reviewDecision": "APPROVED",
               "repository": { "nameWithOwner": "corleone/casino" },
-              "author": { "login": "tomhagen" }
+              "author": { "login": "tomhagen" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS" } } }] }
             },
             {
               "id": "PR_kwDOAAAAAc5eeeee",
@@ -92,7 +96,8 @@ nonisolated enum SyncFixtures {
               "isDraft": false,
               "reviewDecision": "CHANGES_REQUESTED",
               "repository": { "nameWithOwner": "corleone/casino" },
-              "author": { "login": "tomhagen" }
+              "author": { "login": "tomhagen" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "FAILURE" } } }] }
             },
             {
               "id": "PR_kwDOAAAAAc5fffff",
@@ -104,7 +109,8 @@ nonisolated enum SyncFixtures {
               "isDraft": true,
               "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/olive-oil" },
-              "author": { "login": "tomhagen" }
+              "author": { "login": "tomhagen" },
+              "commits": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
             }
           ]
         }
@@ -128,6 +134,7 @@ nonisolated struct SyncFixture {
         var updatedAt: Date?
         var isDraft = false
         var reviewDecision: String?
+        var rollupState: String?
         var requests: [Request] = []
     }
 
@@ -158,6 +165,7 @@ nonisolated struct SyncFixture {
                 "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
                 "repository": ["nameWithOwner": pullRequest.repository],
                 "author": ["login": pullRequest.author],
+                "commits": ["nodes": [["commit": ["statusCheckRollup": pullRequest.rollupState.map { ["state": $0] } ?? NSNull()]]]],
                 "timelineItems": ["nodes": pullRequest.requests.map { request -> [String: Any] in
                     switch request {
                     case .user(let login, let date):

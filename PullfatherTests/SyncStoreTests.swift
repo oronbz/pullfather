@@ -181,6 +181,38 @@ final class SyncStoreTests {
         #expect(store.family?.first?.reviewState == expected)
     }
 
+    @Test(arguments: [
+        ("SUCCESS", .passing),
+        ("PENDING", .running),
+        ("EXPECTED", .running),
+        ("FAILURE", .failing),
+        ("ERROR", .failing),
+    ] as [(String, Checks)])
+    func rowsShowTheirChecks(rollupState: String, expected: Checks) async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), rollupState: rollupState)
+
+        let store = try await sync(SyncFixture(business: [pullRequest], family: [pullRequest]).data)
+
+        #expect(store.business?.first?.checks == expected)
+        #expect(store.family?.first?.checks == expected)
+    }
+
+    @Test func businessAndFamilyRowsShowTheChecksOfTheirLatestCommit() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.business?.map(\.checks) == [.passing, .running, .failing])
+        #expect(store.family?.map(\.checks) == [nil, .failing, .passing])
+    }
+
+    @Test func aPullRequestWithoutChecksShowsNone() async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), rollupState: nil)
+
+        let store = try await sync(SyncFixture(business: [pullRequest], family: [pullRequest]).data)
+
+        #expect(store.business?.first?.checks == nil)
+        #expect(store.family?.first?.checks == nil)
+    }
+
     @Test func familyRowsFlagDrafts() async throws {
         let store = try await sync(SyncFixtures.recorded)
 

@@ -19,6 +19,9 @@ struct FamilySection: View {
                 } else if let reviewState = row.reviewState {
                     ReviewBadge(reviewState: reviewState)
                 }
+                if let checks = row.checks {
+                    ChecksIcon(checks: checks)
+                }
             }
         }
     }
@@ -44,7 +47,7 @@ extension ReviewBadge {
     init(reviewState: ReviewState) {
         switch reviewState {
         case .approved: self.init(title: "Approved", color: Palette.checksPassing)
-        case .changesRequested: self.init(title: "Changes requested", color: Palette.checksRunning)
+        case .changesRequested: self.init(title: "Changes requested", color: Palette.amber)
         }
     }
 }

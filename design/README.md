@@ -35,7 +35,8 @@ A noir fedora with a git branch tucked in the hatband like a feather. The branch
 | Brass | `#C9A45C` | Popover section labels |
 | Popover surface | `rgba(33,27,25,0.94)` | Popover background |
 | Text primary / secondary / muted | `#F2E9DA` / `#B8AB98` / `#9C9083` | Popover text |
-| CI pass / running / fail | `#4FA464` / `#D9A441` / `#D9534A` | Status icons (check / ring / cross) |
+| Checks pass / running / fail | `#4FA464` / `#4F8FD9` / `#D9534A` | Status icons (check / ring / cross) |
+| Amber | `#D9A441` | Changes requested badge, warnings |
 
 ## Popover
 
