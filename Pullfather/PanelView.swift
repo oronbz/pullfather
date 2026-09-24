@@ -21,10 +21,13 @@ struct PanelView: View {
                 SignInCard(account: store.account)
             case .signedIn:
                 ScrollView {
-                    BusinessSection(rows: store.business, open: actions.openPullRequest)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 10)
-                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { contentHeight = $0 }
+                    VStack(spacing: 16) {
+                        BusinessSection(rows: store.business, open: actions.openPullRequest)
+                        FamilySection(rows: store.family, open: actions.openPullRequest)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 10)
+                    .onGeometryChange(for: CGFloat.self, of: \.size.height) { contentHeight = $0 }
                 }
                 .frame(height: min(contentHeight, PanelPlacement.maxHeight - headerHeight - footerHeight))
             }
@@ -62,16 +65,16 @@ private struct Hairline: View {
     )
 }
 
-#Preview("Business") {
+#Preview("Business and Family") {
     PanelView(
-        store: .preview(business: BusinessRow.previews),
+        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
 
 #Preview("Empty") {
     PanelView(
-        store: .preview(business: []),
+        store: .preview(business: [], family: []),
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }

@@ -5,64 +5,18 @@ struct BusinessSection: View {
     let open: (URL) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                SectionLabel(title: "Business")
-                Spacer()
-                if let rows, !rows.isEmpty {
-                    Text("\(rows.count) awaiting your review")
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Palette.textMuted)
-                }
-            }
-            .padding(.horizontal, 10)
-            if let rows {
-                if rows.isEmpty {
-                    Text("No favors asked. Enjoy the cannoli.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Palette.textSecondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                } else {
-                    VStack(spacing: 2) {
-                        ForEach(rows) { row in
-                            BusinessRowView(row: row) { open(row.url) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct BusinessRowView: View {
-    let row: BusinessRow
-    let action: () -> Void
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
+        PanelSection(
+            title: "Business",
+            caption: rows.flatMap { $0.isEmpty ? nil : "\($0.count) awaiting your review" },
+            emptyText: "No favors asked. Enjoy the cannoli.",
+            rows: rows
+        ) { row in
+            PanelRow(help: row.title, action: { open(row.url) }) {
                 InitialsAvatar(login: row.author)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Palette.textPrimary)
-                    Text(row.metadata)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Palette.textSecondary)
-                }
-                .lineLimit(1)
+                RowText(title: row.title, metadata: row.metadata)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .contentShape(.rect)
-            .background(isHovered ? Palette.rowHighlight : .clear, in: .rect(cornerRadius: Noir.rowRadius))
         }
-        .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .help(row.title)
     }
 }
 

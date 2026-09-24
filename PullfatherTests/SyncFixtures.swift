@@ -15,6 +15,9 @@ nonisolated enum SyncFixtures {
               "title": "Fix race in token refresh",
               "url": "https://github.com/corleone/olive-oil/pull/412",
               "createdAt": "2026-09-21T09:41:00Z",
+              "updatedAt": "2026-09-24T07:41:00Z",
+              "isDraft": false,
+              "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/olive-oil" },
               "author": { "login": "mike-corleone" },
               "timelineItems": {
@@ -36,6 +39,9 @@ nonisolated enum SyncFixtures {
               "title": "Migrate settings screen to SwiftUI",
               "url": "https://github.com/corleone/casino/pull/1088",
               "createdAt": "2026-09-19T09:41:00Z",
+              "updatedAt": "2026-09-24T04:41:00Z",
+              "isDraft": false,
+              "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "sonny" },
               "timelineItems": {
@@ -53,9 +59,52 @@ nonisolated enum SyncFixtures {
               "title": "Bump fastlane to latest",
               "url": "https://github.com/corleone/casino/pull/1091",
               "createdAt": "2026-09-23T09:41:00Z",
+              "updatedAt": "2026-09-23T09:41:00Z",
+              "isDraft": false,
+              "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "luca-brasi" },
               "timelineItems": { "nodes": [] }
+            }
+          ]
+        },
+        "family": {
+          "nodes": [
+            {
+              "id": "PR_kwDOAAAAAc5ddddd",
+              "number": 1079,
+              "title": "Add offline banner",
+              "url": "https://github.com/corleone/casino/pull/1079",
+              "createdAt": "2026-09-14T09:41:00Z",
+              "updatedAt": "2026-09-21T09:41:00Z",
+              "isDraft": false,
+              "reviewDecision": "APPROVED",
+              "repository": { "nameWithOwner": "corleone/casino" },
+              "author": { "login": "tomhagen" }
+            },
+            {
+              "id": "PR_kwDOAAAAAc5eeeee",
+              "number": 1084,
+              "title": "Refactor push routing",
+              "url": "https://github.com/corleone/casino/pull/1084",
+              "createdAt": "2026-09-18T09:41:00Z",
+              "updatedAt": "2026-09-23T09:41:00Z",
+              "isDraft": false,
+              "reviewDecision": "CHANGES_REQUESTED",
+              "repository": { "nameWithOwner": "corleone/casino" },
+              "author": { "login": "tomhagen" }
+            },
+            {
+              "id": "PR_kwDOAAAAAc5fffff",
+              "number": 97,
+              "title": "Sketch the olive oil import pipeline",
+              "url": "https://github.com/corleone/olive-oil/pull/97",
+              "createdAt": "2026-09-24T08:41:00Z",
+              "updatedAt": "2026-09-24T09:11:00Z",
+              "isDraft": true,
+              "reviewDecision": null,
+              "repository": { "nameWithOwner": "corleone/olive-oil" },
+              "author": { "login": "tomhagen" }
             }
           ]
         }
@@ -76,21 +125,37 @@ nonisolated struct SyncFixture {
         var repository = "corleone/olive-oil"
         var author = "sonny"
         var createdAt: Date
+        var updatedAt: Date?
+        var isDraft = false
+        var reviewDecision: String?
         var requests: [Request] = []
     }
 
     var viewer = "tomhagen"
     var business: [PullRequest] = []
+    var family: [PullRequest] = []
 
     var data: Data {
+        let response: [String: Any] = ["data": [
+            "viewer": ["login": viewer],
+            "business": ["nodes": Self.nodes(business)],
+            "family": ["nodes": Self.nodes(family)],
+        ]]
+        return try! JSONSerialization.data(withJSONObject: response)
+    }
+
+    private static func nodes(_ pullRequests: [PullRequest]) -> [[String: Any]] {
         let formatter = ISO8601DateFormatter()
-        let nodes = business.map { pullRequest -> [String: Any] in
+        return pullRequests.map { pullRequest -> [String: Any] in
             [
                 "id": "PR_\(pullRequest.number)",
                 "number": pullRequest.number,
                 "title": pullRequest.title,
                 "url": "https://github.com/\(pullRequest.repository)/pull/\(pullRequest.number)",
                 "createdAt": formatter.string(from: pullRequest.createdAt),
+                "updatedAt": formatter.string(from: pullRequest.updatedAt ?? pullRequest.createdAt),
+                "isDraft": pullRequest.isDraft,
+                "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
                 "repository": ["nameWithOwner": pullRequest.repository],
                 "author": ["login": pullRequest.author],
                 "timelineItems": ["nodes": pullRequest.requests.map { request -> [String: Any] in
@@ -103,7 +168,5 @@ nonisolated struct SyncFixture {
                 }],
             ]
         }
-        let response: [String: Any] = ["data": ["viewer": ["login": viewer], "business": ["nodes": nodes]]]
-        return try! JSONSerialization.data(withJSONObject: response)
     }
 }

@@ -11,6 +11,11 @@ nonisolated struct ReviewRequest: Equatable, Sendable {
     let requestedAt: Date
 }
 
+nonisolated enum ReviewState: String, Equatable, Sendable {
+    case approved = "APPROVED"
+    case changesRequested = "CHANGES_REQUESTED"
+}
+
 nonisolated struct PullRequest: Equatable, Sendable {
     let id: String
     let number: Int
@@ -19,6 +24,9 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let repository: String
     let author: String
     let createdAt: Date
+    let updatedAt: Date
+    let isDraft: Bool
+    let reviewState: ReviewState?
     let reviewRequests: [ReviewRequest]
 
     func waitingSince(viewer: String) -> Date {
@@ -33,22 +41,17 @@ nonisolated struct PullRequest: Equatable, Sendable {
 nonisolated struct SyncResult: Equatable, Sendable {
     let viewer: String
     let business: [PullRequest]
+    let family: [PullRequest]
 }
 
 nonisolated enum SyncQuery {
     static let text = """
-        query Sync($business: String!) {
+        query Sync($business: String!, $family: String!) {
           viewer { login }
           business: search(query: $business, type: ISSUE, first: 100) {
             nodes {
+              ...PullRequestFields
               ... on PullRequest {
-                id
-                number
-                title
-                url
-                createdAt
-                repository { nameWithOwner }
-                author { login }
                 timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT], last: 20) {
                   nodes {
                     ... on ReviewRequestedEvent {
@@ -63,11 +66,30 @@ nonisolated enum SyncQuery {
               }
             }
           }
+          family: search(query: $family, type: ISSUE, first: 100) {
+            nodes {
+              ...PullRequestFields
+            }
+          }
+        }
+
+        fragment PullRequestFields on PullRequest {
+          id
+          number
+          title
+          url
+          createdAt
+          updatedAt
+          isDraft
+          reviewDecision
+          repository { nameWithOwner }
+          author { login }
         }
         """
 
     static let variables: [String: GraphQLVariable] = [
         "business": "is:open is:pr archived:false -is:draft review-requested:@me",
+        "family": "is:open is:pr archived:false author:@me",
     ]
 
     static func decode(_ data: Data) throws -> SyncResult {
@@ -76,7 +98,8 @@ nonisolated enum SyncQuery {
         let payload = try decoder.decode(Response.self, from: data).data
         return SyncResult(
             viewer: payload.viewer.login,
-            business: payload.business.nodes.compactMap(\.pullRequest)
+            business: payload.business.nodes.compactMap(\.pullRequest),
+            family: payload.family.nodes.compactMap(\.pullRequest)
         )
     }
 
@@ -84,6 +107,7 @@ nonisolated enum SyncQuery {
         struct Payload: Decodable {
             let viewer: Viewer
             let business: Search
+            let family: Search
         }
 
         struct Viewer: Decodable {
@@ -141,9 +165,12 @@ nonisolated enum SyncQuery {
         let title: String
         let url: URL
         let createdAt: Date
+        let updatedAt: Date
+        let isDraft: Bool
+        let reviewDecision: String?
         let repository: Repository
         let author: Author?
-        let timelineItems: Timeline
+        let timelineItems: Timeline?
 
         var pullRequest: PullRequest {
             PullRequest(
@@ -154,7 +181,10 @@ nonisolated enum SyncQuery {
                 repository: repository.nameWithOwner,
                 author: author?.login ?? "ghost",
                 createdAt: createdAt,
-                reviewRequests: timelineItems.nodes.map {
+                updatedAt: updatedAt,
+                isDraft: isDraft,
+                reviewState: reviewDecision.flatMap(ReviewState.init),
+                reviewRequests: (timelineItems?.nodes ?? []).map {
                     ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
                 }
             )

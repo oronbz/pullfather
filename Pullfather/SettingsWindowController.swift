@@ -47,6 +47,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 10)
             AccountPane(account: account)
             BusinessPane(preferences: preferences)
+            MenuBarPane(preferences: preferences)
             GeneralPane(launchAtLogin: launchAtLogin)
         }
         .padding(.horizontal, 20)
@@ -102,6 +103,29 @@ private struct BusinessPane: View {
                 Picker("Show first", selection: $preferences.businessOrder) {
                     Text("Newest").tag(BusinessOrder.newestFirst)
                     Text("Longest waiting").tag(BusinessOrder.oldestFirst)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .tint(Palette.commitRed)
+                .fixedSize()
+            }
+        }
+    }
+}
+
+private struct MenuBarPane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Menu Bar") {
+            NoirRow {
+                Text("Counter")
+                Spacer()
+                Picker("Counter", selection: $preferences.countMode) {
+                    Text("Business").tag(CountMode.business)
+                    Text("Family").tag(CountMode.family)
+                    Text("No counter").tag(CountMode.off)
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)

@@ -144,6 +144,80 @@ final class SyncStoreTests {
         #expect(store.countText == nil)
     }
 
+    @Test func familyShowsMyPullRequestsWithTheMostRecentActivityFirst() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.family?.map(\.metadata) == [
+            "corleone/olive-oil #97 · 30m",
+            "corleone/casino #1084 · 1d",
+            "corleone/casino #1079 · 3d",
+        ])
+        let row = try #require(store.family?.first)
+        #expect(row.title == "Sketch the olive oil import pipeline")
+        #expect(row.url == URL(string: "https://github.com/corleone/olive-oil/pull/97"))
+    }
+
+    @Test func familyIncludesDraftsWhileBusinessExcludesThem() async throws {
+        let draft = SyncFixture.PullRequest(number: 7, createdAt: ago(hours: 1), isDraft: true)
+        let ready = SyncFixture.PullRequest(number: 8, createdAt: ago(hours: 2))
+
+        let store = try await sync(SyncFixture(business: [draft, ready], family: [draft, ready]).data)
+
+        #expect(store.business?.map(\.number) == [8])
+        #expect(store.family?.map(\.number) == [7, 8])
+    }
+
+    @Test(arguments: [
+        ("APPROVED", .approved),
+        ("CHANGES_REQUESTED", .changesRequested),
+        ("REVIEW_REQUIRED", nil),
+        (nil, nil),
+    ] as [(String?, ReviewState?)])
+    func familyRowsShowTheirReviewState(reviewDecision: String?, expected: ReviewState?) async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), reviewDecision: reviewDecision)
+
+        let store = try await sync(SyncFixture(family: [pullRequest]).data)
+
+        #expect(store.family?.first?.reviewState == expected)
+    }
+
+    @Test func familyRowsFlagDrafts() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.family?.map(\.isDraft) == [true, false, false])
+    }
+
+    @Test(arguments: [
+        (.business, "1"),
+        (.family, "2"),
+        (.off, nil),
+    ] as [(CountMode, String?)])
+    func theCountFollowsTheCountMode(mode: CountMode, expected: String?) async throws {
+        let store = try await sync(SyncFixture(
+            business: [.init(number: 1, createdAt: ago(hours: 1))],
+            family: [.init(number: 2, createdAt: ago(hours: 1)), .init(number: 3, createdAt: ago(hours: 2), isDraft: true)]
+        ).data)
+
+        preferences.countMode = mode
+
+        #expect(store.countText == expected)
+    }
+
+    @Test func theFamilyCountIsHiddenWhenFamilyIsEmpty() async throws {
+        preferences.countMode = .family
+
+        let store = try await sync(SyncFixture(business: [.init(number: 1, createdAt: ago(hours: 1))]).data)
+
+        #expect(store.family == [])
+        #expect(store.countText == nil)
+    }
+
+    @Test func theCountModeIsRememberedAcrossLaunches() {
+        preferences.countMode = .off
+
+        #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).countMode == .off)
+    }
+
     @Test func overlappingSyncRequestsShareOneSync() async throws {
         let github = makeGitHub(SyncFixtures.recorded, gated: true)
         let store = try makeStore(github)
