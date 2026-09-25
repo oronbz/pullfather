@@ -7,6 +7,7 @@ struct PanelActions {
     var openRepository: (URL) -> Void
     var openGitHub: () -> Void
     var openSettings: () -> Void
+    var openNotificationSettings: () -> Void
     var quit: () -> Void
 }
 
@@ -16,12 +17,14 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var panel: NoirPanel!
     private var actions: PanelActions!
     private let store: SyncStore
+    private let notifications: NotificationAccess
     private var countUpdates: Task<Void, Never>?
     private let activation: ActivationHandoff
     private var isOpen = false
 
-    init(store: SyncStore, avatars: AvatarCache, activation: ActivationHandoff, actions: PanelActions) {
+    init(store: SyncStore, avatars: AvatarCache, notifications: NotificationAccess, activation: ActivationHandoff, actions: PanelActions) {
         self.store = store
+        self.notifications = notifications
         self.activation = activation
         super.init()
         self.actions = PanelActions(
@@ -30,13 +33,15 @@ final class PanelController: NSObject, NSWindowDelegate {
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
             openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
             openSettings: { [weak self] in actions.openSettings(); self?.close() },
+            openNotificationSettings: { [weak self] in actions.openNotificationSettings(); self?.close() },
             quit: actions.quit
         )
         hostingView = NSHostingView(rootView: PanelView(
             store: store,
             avatars: avatars,
+            notifications: notifications,
             actions: self.actions,
-            onHeightChange: { [weak self] _ in self?.contentHeightChanged() }
+            onHeightChange: { [weak self] height in self?.contentHeightChanged(to: height) }
         ))
         panel = NoirPanel(contentView: hostingView)
         panel.delegate = self
@@ -70,6 +75,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         guard layout() else { return }
         store.select(nil)
         store.requestSync()
+        Task { [notifications] in await notifications.refresh() }
         activation.activate()
         isOpen = true
         NSAnimationContext.runAnimationGroup { context in
@@ -82,16 +88,17 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     @discardableResult
-    private func layout() -> Bool {
+    private func layout(contentHeight: CGFloat? = nil) -> Bool {
         guard let anchor = statusItemFrame, let screen = statusItem.button?.window?.screen else { return false }
-        let frame = PanelPlacement.frame(below: anchor, contentHeight: hostingView.fittingSize.height, within: screen.visibleFrame)
+        let height = contentHeight ?? hostingView.fittingSize.height
+        let frame = PanelPlacement.frame(below: anchor, contentHeight: height, within: screen.visibleFrame)
         panel.setFrame(frame, display: true)
         return true
     }
 
-    private func contentHeightChanged() {
+    private func contentHeightChanged(to height: CGFloat) {
         guard isOpen else { return }
-        layout()
+        layout(contentHeight: height)
         panel.invalidateShadow()
     }
 
@@ -144,6 +151,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 #if DEBUG
 extension PanelActions {
-    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
 }
 #endif

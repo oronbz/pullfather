@@ -3,6 +3,7 @@ import SwiftUI
 struct PanelView: View {
     let store: SyncStore
     let avatars: AvatarCache
+    let notifications: NotificationAccess
     let actions: PanelActions
     var onHeightChange: (CGFloat) -> Void = { _ in }
     private let cornerRadius: CGFloat = 12
@@ -38,6 +39,9 @@ struct PanelView: View {
                 ScrollViewReader { scroller in
                     ScrollView {
                         VStack(spacing: 16) {
+                            if notifications.showsPopoverHint {
+                                NotificationsOffRow(open: actions.openNotificationSettings, dismiss: notifications.dismissHint)
+                            }
                             BusinessSection(rows: store.business, syncedAt: store.lastSyncedAt, avatars: avatars, selection: selection, actions: actions)
                             FamilySection(rows: store.family, selection: selection, actions: actions)
                         }
@@ -96,6 +100,40 @@ private struct SignInAgainRow: View {
     }
 }
 
+private struct NotificationsOffRow: View {
+    let open: () -> Void
+    let dismiss: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        PanelRow(help: "Open Notifications in System Settings", isHighlighted: isHovered, onHover: { isHovered = $0 }, action: open) {
+            Image(systemName: "bell.slash")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Palette.amber)
+                .frame(width: 30, height: 30)
+            RowText(title: "Notifications are off", metadata: "Turn them on in System Settings.")
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Palette.textMuted)
+            Color.clear
+                .frame(width: 16, height: 16)
+        }
+        .overlay(alignment: .trailing) {
+            Button(action: dismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Palette.textMuted)
+                    .frame(width: 16, height: 16)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss")
+            .padding(.trailing, 10)
+        }
+    }
+}
+
 private struct Hairline: View {
     var body: some View {
         Rectangle()
@@ -111,6 +149,7 @@ private struct Hairline: View {
         PanelView(
             store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
             avatars: .preview,
+            notifications: .preview(isOff: false),
             actions: .preview
         )
     }
@@ -121,6 +160,18 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
             avatars: .preview,
+            notifications: .preview(isOff: false),
+            actions: .preview
+        )
+    }
+}
+
+#Preview("Notifications off") {
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+            avatars: .preview,
+            notifications: .preview(isOff: true),
             actions: .preview
         )
     }
@@ -131,6 +182,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
             avatars: .preview,
+            notifications: .preview(isOff: false),
             actions: .preview
         )
     }
@@ -141,6 +193,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
             avatars: .preview,
+            notifications: .preview(isOff: false),
             actions: .preview
         )
     }
@@ -151,6 +204,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: [], family: []),
             avatars: .preview,
+            notifications: .preview(isOff: false),
             actions: .preview
         )
     }

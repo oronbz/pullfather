@@ -5,18 +5,20 @@ import SwiftUI
 final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let account: Account
     private let preferences: Preferences
+    private let notifications: NotificationAccess
     private let launchAtLogin: LaunchAtLogin
     private let activation: ActivationHandoff
 
-    init(account: Account, preferences: Preferences, launchAtLogin: LaunchAtLogin, activation: ActivationHandoff) {
+    init(account: Account, preferences: Preferences, notifications: NotificationAccess, launchAtLogin: LaunchAtLogin, activation: ActivationHandoff) {
         self.account = account
         self.preferences = preferences
+        self.notifications = notifications
         self.launchAtLogin = launchAtLogin
         self.activation = activation
     }
 
     private lazy var window: NSWindow = {
-        let controller = NSHostingController(rootView: SettingsView(account: account, preferences: preferences, launchAtLogin: launchAtLogin))
+        let controller = NSHostingController(rootView: SettingsView(account: account, preferences: preferences, notifications: notifications, launchAtLogin: launchAtLogin))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "Settings"
@@ -36,6 +38,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.makeKeyAndOrderFront(nil)
     }
 
+    func windowDidBecomeKey(_ notification: Notification) {
+        Task { [notifications] in await notifications.refresh() }
+    }
+
     func windowWillClose(_ notification: Notification) {
         activation.handBack(leaving: window)
     }
@@ -44,6 +50,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 struct SettingsView: View {
     let account: Account
     let preferences: Preferences
+    let notifications: NotificationAccess
     let launchAtLogin: LaunchAtLogin
 
     var body: some View {
@@ -54,7 +61,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 10)
             AccountPane(account: account)
             BusinessPane(preferences: preferences)
-            NotificationsPane(preferences: preferences)
+            NotificationsPane(preferences: preferences, notifications: notifications)
             SyncPane(preferences: preferences)
             AppearancePane(preferences: preferences)
             MenuBarPane(preferences: preferences)
@@ -125,6 +132,7 @@ private struct BusinessPane: View {
 
 private struct NotificationsPane: View {
     @Bindable var preferences: Preferences
+    let notifications: NotificationAccess
 
     var body: some View {
         NoirSection(title: "Notifications") {
@@ -136,6 +144,15 @@ private struct NotificationsPane: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     .tint(Palette.commitRed)
+            }
+            if notifications.showsHint {
+                NoirRow {
+                    Text("macOS has notifications turned off.")
+                        .foregroundStyle(Palette.textSecondary)
+                    Spacer()
+                    Button("Open Notifications") { notifications.openSystemSettings() }
+                        .buttonStyle(.noir)
+                }
             }
         }
     }
@@ -253,7 +270,7 @@ private struct GeneralPane: View {
 #if DEBUG
 #Preview("Signed out") {
     BothAppearances {
-        SettingsView(account: .preview(signedIn: false), preferences: .preview, launchAtLogin: LaunchAtLogin())
+        SettingsView(account: .preview(signedIn: false), preferences: .preview, notifications: .preview(isOff: false), launchAtLogin: LaunchAtLogin())
             .frame(minHeight: 370, maxHeight: .infinity, alignment: .top)
             .background(Palette.windowSurface)
     }
@@ -261,7 +278,7 @@ private struct GeneralPane: View {
 
 #Preview("Signed in") {
     BothAppearances {
-        SettingsView(account: .preview(signedIn: true), preferences: .preview, launchAtLogin: LaunchAtLogin())
+        SettingsView(account: .preview(signedIn: true), preferences: .preview, notifications: .preview(isOff: true), launchAtLogin: LaunchAtLogin())
             .fixedSize()
     }
 }

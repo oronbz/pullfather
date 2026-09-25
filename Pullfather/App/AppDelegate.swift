@@ -8,7 +8,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
     private let activation = ActivationHandoff()
-    private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin, activation: activation)
+    private lazy var notifications = NotificationAccess(preferences: preferences)
+    private lazy var settingsWindow = SettingsWindowController(
+        account: account,
+        preferences: preferences,
+        notifications: notifications,
+        launchAtLogin: launchAtLogin,
+        activation: activation
+    )
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
     private lazy var notifier = ArrivalNotifier(
@@ -29,15 +36,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
         store.onArrivals = notifier.notify
-        permissionRequests = Task { [account, notifier] in
+        permissionRequests = Task { [account, notifications] in
             for await state in Observations({ account.state }) {
                 if case .signedIn(login: .some) = state {
-                    notifier.requestPermission()
+                    await notifications.request()
                 }
             }
         }
         syncTriggers.start()
-        panelController = PanelController(store: store, avatars: avatars, activation: activation, actions: PanelActions(
+        panelController = PanelController(store: store, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
             copyLink: { url in
                 NSPasteboard.general.clearContents()
@@ -46,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openRepository: { NSWorkspace.shared.open($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
             openSettings: { [settingsWindow] in settingsWindow.show() },
+            openNotificationSettings: { [notifications] in notifications.openSystemSettings() },
             quit: { NSApp.terminate(nil) }
         ))
         KeyboardShortcuts.onKeyDown(for: .togglePanel) { [weak self] in

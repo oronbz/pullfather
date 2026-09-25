@@ -17,12 +17,6 @@ final class ArrivalNotifier: NSObject, UNUserNotificationCenterDelegate {
         center.delegate = self
     }
 
-    func requestPermission() {
-        Task { [center] in
-            _ = try? await center.requestAuthorization(options: [.alert, .sound])
-        }
-    }
-
     func notify(_ arrivals: [BusinessRow]) {
         guard preferences.notifiesArrivals, let notice = ArrivalNotice(arrivals: arrivals) else { return }
         let content = UNMutableNotificationContent()
