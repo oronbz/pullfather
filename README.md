@@ -37,7 +37,7 @@ Other PR menu bar apps refresh the count and the list separately, so the number 
 
 - Business and Family sections, with CI status on every row and review badges on yours
 - A notification when a new pull request needs your review ("3 new favors asked" when they come in bunches)
-- Keyboard first: a global hotkey (⌥⌘P by default), arrow keys and Enter, plus ⌘R to refresh
+- Keyboard first: a global hotkey (⌃⇧⌘P by default), arrow keys and Enter, plus ⌘R to refresh
 - Follows your system's light or dark appearance
 - Launches at login and has no Dock icon
 
