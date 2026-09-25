@@ -7,19 +7,18 @@ nonisolated final class FakeGitHub: Sendable {
         var requestCount = 0
         var isGateOpen: Bool
         var scriptedFailure: GitHubFailure?
+        var response: Data?
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
 
     private let viewers: [String: String]
     private let failure: GitHubFailure
-    private let response: Data?
     private let state: Mutex<State>
 
     init(viewers: [String: String] = [:], failure: GitHubFailure = .unauthorised, response: Data? = nil, gated: Bool = false) {
         self.viewers = viewers
         self.failure = failure
-        self.response = response
-        state = Mutex(State(isGateOpen: !gated))
+        state = Mutex(State(isGateOpen: !gated, response: response))
     }
 
     var requestCount: Int {
@@ -28,6 +27,10 @@ nonisolated final class FakeGitHub: Sendable {
 
     func fail(with failure: GitHubFailure?) {
         state.withLock { $0.scriptedFailure = failure }
+    }
+
+    func respond(with response: Data) {
+        state.withLock { $0.response = response }
     }
 
     func release() {
@@ -48,7 +51,8 @@ nonisolated final class FakeGitHub: Sendable {
     fileprivate func send(token: String) async throws(GitHubFailure) -> Data {
         guard let login = viewers[token] else { throw failure }
         await passGate()
-        if let scriptedFailure = state.withLock({ $0.scriptedFailure }) {
+        let (scriptedFailure, response) = state.withLock { ($0.scriptedFailure, $0.response) }
+        if let scriptedFailure {
             throw scriptedFailure
         }
         return response ?? Data(#"{"data":{"viewer":{"login":"\#(login)"}}}"#.utf8)

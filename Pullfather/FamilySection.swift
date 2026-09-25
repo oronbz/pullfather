@@ -2,7 +2,8 @@ import SwiftUI
 
 struct FamilySection: View {
     let rows: [FamilyRow]?
-    let open: (URL) -> Void
+    @Binding var selection: PanelRowID?
+    let actions: PanelActions
 
     var body: some View {
         PanelSection(
@@ -11,7 +12,7 @@ struct FamilySection: View {
             emptyText: "No family business today.",
             rows: rows
         ) { row in
-            PanelRow(help: row.title, action: { open(row.url) }) {
+            PullRequestRow(id: .family(row.id), pullRequest: row, selection: $selection, actions: actions) {
                 RowText(title: row.title, metadata: row.metadata)
                 Spacer(minLength: 8)
                 if row.isDraft {
@@ -54,7 +55,7 @@ extension ReviewBadge {
 
 #if DEBUG
 #Preview("Family") {
-    FamilySection(rows: FamilyRow.previews, open: { _ in })
+    FamilySection(rows: FamilyRow.previews, selection: .constant(.family("5")), actions: .preview)
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)
@@ -62,7 +63,7 @@ extension ReviewBadge {
 }
 
 #Preview("Empty") {
-    FamilySection(rows: [], open: { _ in })
+    FamilySection(rows: [], selection: .constant(nil), actions: .preview)
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)

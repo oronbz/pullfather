@@ -38,9 +38,10 @@ struct PanelSection<Row: Identifiable, RowView: View>: View {
 
 struct PanelRow<Content: View>: View {
     let help: String
+    let isHighlighted: Bool
+    let onHover: (Bool) -> Void
     let action: () -> Void
     @ViewBuilder let content: Content
-    @State private var isHovered = false
 
     var body: some View {
         Button(action: action) {
@@ -50,11 +51,40 @@ struct PanelRow<Content: View>: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .contentShape(.rect)
-            .background(isHovered ? Palette.rowHighlight : .clear, in: .rect(cornerRadius: Noir.rowRadius))
+            .background(isHighlighted ? Palette.rowHighlight : .clear, in: .rect(cornerRadius: Noir.rowRadius))
         }
         .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
+        .onHover(perform: onHover)
         .help(help)
+    }
+}
+
+struct PullRequestRow<Content: View>: View {
+    let id: PanelRowID
+    let pullRequest: any ListedPullRequest
+    @Binding var selection: PanelRowID?
+    let actions: PanelActions
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        PanelRow(help: pullRequest.title, isHighlighted: selection == id, onHover: pointerMoved, action: { actions.openPullRequest(pullRequest.url) }) {
+            content
+        }
+        .id(id)
+        .contextMenu {
+            Button("Copy link") { actions.copyLink(pullRequest.url) }
+            Button("Open repository") { actions.openRepository(pullRequest.repositoryURL) }
+        }
+    }
+
+    private func pointerMoved(isInside: Bool) {
+        let pointerEvents: [NSEvent.EventType] = [.mouseMoved, .mouseEntered, .mouseExited, .scrollWheel]
+        guard let type = NSApp.currentEvent?.type, pointerEvents.contains(type) else { return }
+        if isInside {
+            selection = id
+        } else if selection == id {
+            selection = nil
+        }
     }
 }
 

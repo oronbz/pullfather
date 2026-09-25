@@ -4,7 +4,8 @@ struct BusinessSection: View {
     let rows: [BusinessRow]?
     let syncedAt: Date?
     let avatars: AvatarCache
-    let open: (URL) -> Void
+    @Binding var selection: PanelRowID?
+    let actions: PanelActions
 
     var body: some View {
         PanelSection(
@@ -13,7 +14,7 @@ struct BusinessSection: View {
             emptyText: "No favors asked. Enjoy the cannoli.",
             rows: rows
         ) { row in
-            PanelRow(help: row.title, action: { open(row.url) }) {
+            PullRequestRow(id: .business(row.id), pullRequest: row, selection: $selection, actions: actions) {
                 AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
                 RowText(title: row.title, metadata: row.metadata)
                 Spacer(minLength: 8)
@@ -87,7 +88,7 @@ struct InitialsAvatar: View {
 
 #if DEBUG
 #Preview("Business") {
-    BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, open: { _ in })
+    BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)
@@ -95,7 +96,7 @@ struct InitialsAvatar: View {
 }
 
 #Preview("Empty") {
-    BusinessSection(rows: [], syncedAt: nil, avatars: .preview, open: { _ in })
+    BusinessSection(rows: [], syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)

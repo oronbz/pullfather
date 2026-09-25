@@ -1,15 +1,18 @@
 import AppKit
+import KeyboardShortcuts
 import SwiftUI
 
-final class SettingsWindowController {
+final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let account: Account
     private let preferences: Preferences
     private let launchAtLogin: LaunchAtLogin
+    private let activation: ActivationHandoff
 
-    init(account: Account, preferences: Preferences, launchAtLogin: LaunchAtLogin) {
+    init(account: Account, preferences: Preferences, launchAtLogin: LaunchAtLogin, activation: ActivationHandoff) {
         self.account = account
         self.preferences = preferences
         self.launchAtLogin = launchAtLogin
+        self.activation = activation
     }
 
     private lazy var window: NSWindow = {
@@ -23,14 +26,19 @@ final class SettingsWindowController {
         window.backgroundColor = NSColor(Palette.windowSurface)
         window.appearance = NSAppearance(named: .darkAqua)
         window.isReleasedWhenClosed = false
+        window.delegate = self
         window.center()
         return window
     }()
 
     func show() {
         launchAtLogin.refresh()
-        NSApp.activate()
+        activation.activate()
         window.makeKeyAndOrderFront(nil)
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        activation.handBack(leaving: window)
     }
 }
 
@@ -174,6 +182,13 @@ private struct GeneralPane: View {
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     .tint(Palette.commitRed)
+            }
+            NoirRow {
+                Text("Global hotkey")
+                Spacer()
+                KeyboardShortcuts.Recorder(for: .togglePanel)
+                    .controlSize(.small)
+                    .fixedSize()
             }
             if launchAtLogin.needsApproval {
                 NoirRow {

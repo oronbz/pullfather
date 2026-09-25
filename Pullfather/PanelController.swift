@@ -3,6 +3,8 @@ import SwiftUI
 
 struct PanelActions {
     var openPullRequest: (URL) -> Void
+    var copyLink: (URL) -> Void
+    var openRepository: (URL) -> Void
     var openGitHub: () -> Void
     var openSettings: () -> Void
     var quit: () -> Void
@@ -12,26 +14,33 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private var hostingView: NSHostingView<PanelView>!
     private var panel: NoirPanel!
+    private var actions: PanelActions!
     private let store: SyncStore
     private var countUpdates: Task<Void, Never>?
+    private let activation: ActivationHandoff
 
-    init(store: SyncStore, avatars: AvatarCache, actions: PanelActions) {
+    init(store: SyncStore, avatars: AvatarCache, activation: ActivationHandoff, actions: PanelActions) {
         self.store = store
+        self.activation = activation
         super.init()
+        self.actions = PanelActions(
+            openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
+            copyLink: { [weak self] url in actions.copyLink(url); self?.dismiss() },
+            openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
+            openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
+            openSettings: { [weak self] in actions.openSettings(); self?.close() },
+            quit: actions.quit
+        )
         hostingView = NSHostingView(rootView: PanelView(
             store: store,
             avatars: avatars,
-            actions: PanelActions(
-                openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
-                openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
-                openSettings: { [weak self] in actions.openSettings(); self?.close() },
-                quit: actions.quit
-            ),
+            actions: self.actions,
             onHeightChange: { [weak self] _ in self?.contentHeightChanged() }
         ))
         panel = NoirPanel(contentView: hostingView)
         panel.delegate = self
-        panel.onCancel = { [weak self] in self?.close() }
+        panel.onCancel = { [weak self] in self?.dismiss() }
+        panel.onCommand = { [weak self] command in self?.perform(command) ?? false }
 
         if let button = statusItem.button {
             button.image = NSImage(resource: .menuBarIcon)
@@ -47,14 +56,15 @@ final class PanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    @objc private func toggle() {
-        panel.isVisible ? close() : open()
+    @objc func toggle() {
+        panel.isVisible ? dismiss() : open()
     }
 
     private func open() {
         guard layout() else { return }
+        store.select(nil)
         store.requestSync()
-        NSApp.activate()
+        activation.activate()
         panel.makeKeyAndOrderFront(nil)
         panel.invalidateShadow()
         statusItem.button?.highlight(true)
@@ -75,15 +85,39 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.invalidateShadow()
     }
 
+    private func perform(_ command: PanelCommand) -> Bool {
+        switch command {
+        case .move(let move):
+            store.moveSelection(move)
+            return store.selection != nil
+        case .open:
+            guard let url = store.selectedURL else { return false }
+            actions.openPullRequest(url)
+            return true
+        }
+    }
+
     private func close() {
         panel.orderOut(nil)
         statusItem.button?.highlight(false)
+    }
+
+    private func dismiss() {
+        close()
+        activation.handBack(leaving: panel)
     }
 
     func windowDidResignKey(_ notification: Notification) {
         if let event = NSApp.currentEvent, event.type == .leftMouseDown, event.window === statusItem.button?.window {
             return
         }
-        close()
+        guard panel.isVisible else { return }
+        dismiss()
     }
 }
+
+#if DEBUG
+extension PanelActions {
+    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+}
+#endif

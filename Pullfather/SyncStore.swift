@@ -1,7 +1,19 @@
 import Foundation
 import Observation
 
-struct BusinessRow: Identifiable, Equatable {
+protocol ListedPullRequest {
+    var title: String { get }
+    var url: URL { get }
+    var repository: String { get }
+}
+
+extension ListedPullRequest {
+    var repositoryURL: URL {
+        URL(string: "https://github.com")!.appending(path: repository)
+    }
+}
+
+struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let id: String
     let number: Int
     let title: String
@@ -18,7 +30,7 @@ struct BusinessRow: Identifiable, Equatable {
     }
 }
 
-struct FamilyRow: Identifiable, Equatable {
+struct FamilyRow: Identifiable, Equatable, ListedPullRequest {
     let id: String
     let number: Int
     let title: String
@@ -34,6 +46,16 @@ struct FamilyRow: Identifiable, Equatable {
     }
 }
 
+enum PanelRowID: Hashable {
+    case business(String)
+    case family(String)
+}
+
+enum SelectionMove {
+    case up
+    case down
+}
+
 @Observable
 final class SyncStore {
     let account: Account
@@ -43,6 +65,7 @@ final class SyncStore {
     private(set) var family: [FamilyRow]?
     private(set) var lastSyncedAt: Date?
     private var failure: (reason: GitHubFailure, token: String)?
+    private var requestedSelection: PanelRowID?
 
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
@@ -56,6 +79,35 @@ final class SyncStore {
         case .oldestFirst: oldestFirst
         case .newestFirst: oldestFirst?.reversed()
         }
+    }
+
+    private var rows: [(id: PanelRowID, url: URL)] {
+        guard !needsSignInAgain else { return [] }
+        return (business ?? []).map { (.business($0.id), $0.url) } + (family ?? []).map { (.family($0.id), $0.url) }
+    }
+
+    var selection: PanelRowID? {
+        rows.contains { $0.id == requestedSelection } ? requestedSelection : nil
+    }
+
+    var selectedURL: URL? {
+        rows.first { $0.id == selection }?.url
+    }
+
+    func select(_ row: PanelRowID?) {
+        requestedSelection = row
+    }
+
+    func moveSelection(_ move: SelectionMove) {
+        let ids = rows.map(\.id)
+        guard let last = ids.indices.last else { return }
+        let index = switch (ids.firstIndex { $0 == selection }, move) {
+        case (nil, .down): 0
+        case (nil, .up): last
+        case (let index?, .down): min(index + 1, last)
+        case (let index?, .up): max(index - 1, 0)
+        }
+        requestedSelection = ids[index]
     }
 
     var countText: String? {

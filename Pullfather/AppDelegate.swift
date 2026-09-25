@@ -1,4 +1,5 @@
 import AppKit
+import KeyboardShortcuts
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let account = Account(tokenStore: .standard, makeTransport: { URLSessionTransport(token: $0) })
@@ -6,7 +7,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var store = SyncStore(account: account, preferences: preferences)
     private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
-    private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin)
+    private let activation = ActivationHandoff()
+    private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin, activation: activation)
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
 
@@ -15,12 +17,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
         syncTriggers.start()
-        panelController = PanelController(store: store, avatars: avatars, actions: PanelActions(
+        panelController = PanelController(store: store, avatars: avatars, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
+            copyLink: { url in
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(url.absoluteString, forType: .string)
+            },
+            openRepository: { NSWorkspace.shared.open($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
             openSettings: { [settingsWindow] in settingsWindow.show() },
             quit: { NSApp.terminate(nil) }
         ))
+        KeyboardShortcuts.onKeyDown(for: .togglePanel) { [weak self] in
+            self?.panelController?.toggle()
+        }
     }
 
     @objc private func showSettings() {
