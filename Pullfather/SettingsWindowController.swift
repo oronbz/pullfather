@@ -47,6 +47,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 10)
             AccountPane(account: account)
             BusinessPane(preferences: preferences)
+            SyncPane(preferences: preferences)
             MenuBarPane(preferences: preferences)
             GeneralPane(launchAtLogin: launchAtLogin)
         }
@@ -103,6 +104,29 @@ private struct BusinessPane: View {
                 Picker("Show first", selection: $preferences.businessOrder) {
                     Text("Newest").tag(BusinessOrder.newestFirst)
                     Text("Longest waiting").tag(BusinessOrder.oldestFirst)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .tint(Palette.commitRed)
+                .fixedSize()
+            }
+        }
+    }
+}
+
+private struct SyncPane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Sync") {
+            NoirRow {
+                Text("Refresh interval")
+                Spacer()
+                Picker("Refresh interval", selection: $preferences.refreshInterval) {
+                    ForEach(RefreshInterval.allCases, id: \.self) { interval in
+                        Text("\(interval.rawValue) min").tag(interval)
+                    }
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)

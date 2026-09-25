@@ -2,15 +2,17 @@ import SwiftUI
 
 struct SignInCard: View {
     let account: Account
+    var message = "The Pullfather needs a GitHub token to see your pull requests. It stays in a file only you can read."
+    var onSignedIn: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionLabel(title: "Sign in")
-            Text("The Pullfather needs a GitHub token to see your pull requests. It stays in a file only you can read.")
+            Text(message)
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            TokenForm(account: account)
+            TokenForm(account: account, onSignedIn: onSignedIn)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)

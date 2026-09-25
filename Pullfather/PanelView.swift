@@ -8,17 +8,30 @@ struct PanelView: View {
     @State private var headerHeight: CGFloat = 0
     @State private var footerHeight: CGFloat = 0
     @State private var contentHeight: CGFloat = 0
+    @State private var isSigningInAgain = false
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                PanelHeader(isSyncing: store.isSyncing, refresh: { store.requestSync() })
+                TimelineView(.periodic(from: .now, by: 15)) { _ in
+                    PanelHeader(isSyncing: store.isSyncing, statusLine: store.statusLine, refresh: { store.requestSync() })
+                }
                 Hairline()
             }
             .onGeometryChange(for: CGFloat.self, of: \.size.height) { headerHeight = $0 }
             switch store.account.state {
             case .signedOut:
                 SignInCard(account: store.account)
+            case .signedIn where store.needsSignInAgain && isSigningInAgain:
+                SignInCard(
+                    account: store.account,
+                    message: "GitHub no longer accepts your token. Paste a new one to get back to business.",
+                    onSignedIn: { isSigningInAgain = false }
+                )
+            case .signedIn where store.needsSignInAgain:
+                SignInAgainRow { isSigningInAgain = true }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 10)
             case .signedIn:
                 ScrollView {
                     VStack(spacing: 16) {
@@ -45,6 +58,25 @@ struct PanelView: View {
         }
         .environment(\.colorScheme, .dark)
         .onGeometryChange(for: CGFloat.self, of: \.size.height) { onHeightChange($0) }
+        .onChange(of: store.needsSignInAgain) { isSigningInAgain = false }
+    }
+}
+
+private struct SignInAgainRow: View {
+    let action: () -> Void
+
+    var body: some View {
+        PanelRow(help: "Sign in again", action: action) {
+            Image(systemName: "key.slash")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Palette.amber)
+                .frame(width: 30, height: 30)
+            RowText(title: "Sign in again", metadata: "GitHub no longer accepts your token.")
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Palette.textMuted)
+        }
     }
 }
 
@@ -68,6 +100,20 @@ private struct Hairline: View {
 #Preview("Business and Family") {
     PanelView(
         store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+        actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+    )
+}
+
+#Preview("Stale") {
+    PanelView(
+        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
+        actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
+    )
+}
+
+#Preview("Sign in again") {
+    PanelView(
+        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }

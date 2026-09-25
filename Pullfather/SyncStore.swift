@@ -40,9 +40,15 @@ final class SyncStore {
     private(set) var isSyncing = false
     private var oldestFirst: [BusinessRow]?
     private(set) var family: [FamilyRow]?
+    private(set) var lastSyncedAt: Date?
+    private var failure: (reason: GitHubFailure, token: String)?
 
     @ObservationIgnored private let now: () -> Date
+    @ObservationIgnored private let sleep: (Duration) async throws -> Void
     @ObservationIgnored private var inFlight: Task<Void, Never>?
+    @ObservationIgnored private var consecutiveFailures = 0
+
+    private static let firstRetry = Duration.seconds(15)
 
     var business: [BusinessRow]? {
         switch preferences.businessOrder {
@@ -61,10 +67,74 @@ final class SyncStore {
         return "\(count)"
     }
 
-    init(account: Account, preferences: Preferences, now: @escaping () -> Date = Date.init) {
+    var lastFailure: GitHubFailure? {
+        guard let failure, failure.token == account.token else { return nil }
+        return failure.reason
+    }
+
+    var isStale: Bool {
+        guard lastFailure == nil else { return true }
+        guard let lastSyncedAt else { return false }
+        return now().timeIntervalSince(lastSyncedAt) > preferences.refreshInterval.staleAfter
+    }
+
+    var needsSignInAgain: Bool {
+        lastFailure == .unauthorised
+    }
+
+    var statusLine: String? {
+        guard isStale, !needsSignInAgain else { return nil }
+        let now = now()
+        let reason: String? = switch lastFailure {
+        case nil: nil
+        case .offline: "Offline"
+        case .rateLimited: "Rate limited"
+        case .unauthorised, .other: "Sync failed"
+        }
+        let detail: String? = switch lastFailure {
+        case .rateLimited(let resetsAt?) where resetsAt.timeIntervalSince(now) >= 60:
+            "resets in \(RelativeTime.format(now, relativeTo: resetsAt))"
+        default:
+            lastSyncedAt.map { lastSyncedAt in
+                let age = RelativeTime.format(lastSyncedAt, relativeTo: now)
+                return age == "now" ? "synced just now" : "synced \(age) ago"
+            }
+        }
+        let line = [reason, detail].compactMap(\.self).joined(separator: " · ")
+        return line.prefix(1).uppercased() + line.dropFirst()
+    }
+
+    init(
+        account: Account,
+        preferences: Preferences,
+        now: @escaping () -> Date = Date.init,
+        sleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
+    ) {
         self.account = account
         self.preferences = preferences
         self.now = now
+        self.sleep = sleep
+    }
+
+    func syncOnSchedule() async {
+        repeat {
+            if !needsSignInAgain {
+                await requestSync().value
+            }
+        } while (try? await sleep(delayBeforeScheduledSync)) != nil
+    }
+
+    private var delayBeforeScheduledSync: Duration {
+        let interval = preferences.refreshInterval.duration
+        let now = now()
+        switch lastFailure {
+        case nil, .unauthorised:
+            return interval
+        case .rateLimited(let resetsAt?) where resetsAt > now:
+            return max(.seconds(resetsAt.timeIntervalSince(now).rounded(.up)), Self.firstRetry)
+        case .rateLimited, .offline, .other:
+            return min(Self.firstRetry * (1 << min(max(consecutiveFailures - 1, 0), 10)), interval)
+        }
     }
 
     @discardableResult
@@ -88,15 +158,28 @@ final class SyncStore {
         guard let token else {
             oldestFirst = nil
             family = nil
+            lastSyncedAt = nil
+            failure = nil
+            consecutiveFailures = 0
             return
         }
         isSyncing = true
         defer { isSyncing = false }
-        guard let data = try? await account.makeTransport(token).send(SyncQuery.text, variables: SyncQuery.variables),
-              let result = try? SyncQuery.decode(data),
-              account.token == token
-        else { return }
+        let result: SyncResult
+        do throws(GitHubFailure) {
+            let data = try await account.makeTransport(token).send(SyncQuery.text, variables: SyncQuery.variables)
+            guard let decoded = try? SyncQuery.decode(data) else { throw .other("GitHub sent an unexpected response.") }
+            result = decoded
+        } catch {
+            failure = (error, token)
+            consecutiveFailures += 1
+            return
+        }
+        guard account.token == token else { return }
         let now = now()
+        lastSyncedAt = now
+        failure = nil
+        consecutiveFailures = 0
         oldestFirst = result.business
             .filter { !$0.isDraft }
             .map { pullRequest in
@@ -158,10 +241,12 @@ extension FamilyRow {
 }
 
 extension SyncStore {
-    static func preview(business: [BusinessRow]?, family: [FamilyRow]?) -> SyncStore {
+    static func preview(business: [BusinessRow]?, family: [FamilyRow]?, failure: GitHubFailure? = nil) -> SyncStore {
         let store = SyncStore(account: .preview(signedIn: true), preferences: .preview)
         store.oldestFirst = business?.reversed()
         store.family = family
+        store.lastSyncedAt = .now.addingTimeInterval(-4 * 60)
+        store.failure = failure.map { ($0, "ghp_preview") }
         return store
     }
 }

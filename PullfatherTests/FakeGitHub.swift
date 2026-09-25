@@ -6,6 +6,7 @@ nonisolated final class FakeGitHub: Sendable {
     private struct State {
         var requestCount = 0
         var isGateOpen: Bool
+        var scriptedFailure: GitHubFailure?
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
 
@@ -23,6 +24,10 @@ nonisolated final class FakeGitHub: Sendable {
 
     var requestCount: Int {
         state.withLock { $0.requestCount }
+    }
+
+    func fail(with failure: GitHubFailure?) {
+        state.withLock { $0.scriptedFailure = failure }
     }
 
     func release() {
@@ -43,6 +48,9 @@ nonisolated final class FakeGitHub: Sendable {
     fileprivate func send(token: String) async throws(GitHubFailure) -> Data {
         guard let login = viewers[token] else { throw failure }
         await passGate()
+        if let scriptedFailure = state.withLock({ $0.scriptedFailure }) {
+            throw scriptedFailure
+        }
         return response ?? Data(#"{"data":{"viewer":{"login":"\#(login)"}}}"#.utf8)
     }
 

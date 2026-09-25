@@ -8,6 +8,7 @@ final class SyncStoreTests {
     let defaultsSuite = "SyncStoreTests-\(UUID().uuidString)"
     lazy var preferences = Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!)
     var now = SyncFixtures.recordedAt
+    let sleeper = ManualSleeper()
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
@@ -25,7 +26,7 @@ final class SyncStoreTests {
     }
 
     private func makeGitHub(_ response: Data, gated: Bool = false) -> FakeGitHub {
-        FakeGitHub(viewers: ["ghp_consigliere": "tomhagen"], response: response, gated: gated)
+        FakeGitHub(viewers: ["ghp_consigliere": "tomhagen", "ghp_new_consigliere": "tomhagen"], response: response, gated: gated)
     }
 
     private func waitingTime(_ pullRequest: SyncFixture.PullRequest) async throws -> String? {
@@ -35,7 +36,7 @@ final class SyncStoreTests {
     private func makeStore(_ github: FakeGitHub) throws -> SyncStore {
         try tokenStore.save("ghp_consigliere")
         let account = Account(tokenStore: tokenStore, makeTransport: github.transport(token:))
-        return SyncStore(account: account, preferences: preferences, now: { [unowned self] in now })
+        return SyncStore(account: account, preferences: preferences, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
     }
 
     @Test func businessShowsTheNewestReviewRequestFirstByDefault() async throws {
@@ -248,6 +249,235 @@ final class SyncStoreTests {
         preferences.countMode = .off
 
         #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).countMode == .off)
+    }
+
+    @Test func aFailedSyncKeepsTheLastGoodBusinessFamilyAndCount() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.fail(with: .offline)
+        now = now.addingTimeInterval(4 * 60)
+        await store.requestSync().value
+
+        #expect(store.business?.map(\.number) == [412, 1088, 1091])
+        #expect(store.family?.map(\.number) == [97, 1084, 1079])
+        #expect(store.countText == "3")
+        #expect(store.isStale)
+        #expect(store.statusLine == "Offline · synced 4m ago")
+    }
+
+    @Test(arguments: [
+        (.oneMinute, 120, nil),
+        (.oneMinute, 121, "Synced 2m ago"),
+        (.fifteenMinutes, 1800, nil),
+        (.fifteenMinutes, 1801, "Synced 30m ago"),
+    ] as [(RefreshInterval, Double, String?)])
+    func dataTurnsStaleAfterTwiceTheRefreshInterval(interval: RefreshInterval, elapsed: Double, expected: String?) async throws {
+        preferences.refreshInterval = interval
+        let store = try await sync(SyncFixtures.recorded)
+
+        now = now.addingTimeInterval(elapsed)
+
+        #expect(store.isStale == (expected != nil))
+        #expect(store.statusLine == expected)
+    }
+
+    @Test func theRefreshIntervalIsOneMinuteByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.refreshInterval == .oneMinute)
+
+        preferences.refreshInterval = .thirtyMinutes
+
+        #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).refreshInterval == .thirtyMinutes)
+    }
+
+    private func statusLine(afterSyncFailingWith failure: GitHubFailure, minutesLater minutes: Double) async throws -> String? {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        github.fail(with: failure)
+        now = now.addingTimeInterval(minutes * 60)
+        await store.requestSync().value
+        return store.statusLine
+    }
+
+    @Test func aRateLimitedSyncSaysWhenTheLimitResets() async throws {
+        let resetsAt = now.addingTimeInterval(16 * 60)
+
+        let statusLine = try await statusLine(afterSyncFailingWith: .rateLimited(resetsAt: resetsAt), minutesLater: 4)
+
+        #expect(statusLine == "Rate limited · resets in 12m")
+    }
+
+    @Test func aRateLimitedSyncWithoutAResetTimeSaysWhenItLastSynced() async throws {
+        let statusLine = try await statusLine(afterSyncFailingWith: .rateLimited(resetsAt: nil), minutesLater: 4)
+
+        #expect(statusLine == "Rate limited · synced 4m ago")
+    }
+
+    @Test func aSyncThatFailsRightAfterAGoodOneSaysItSyncedJustNow() async throws {
+        let statusLine = try await statusLine(afterSyncFailingWith: .offline, minutesLater: 0)
+
+        #expect(statusLine == "Offline · synced just now")
+    }
+
+    @Test func anUnexpectedFailureSaysTheSyncFailed() async throws {
+        let statusLine = try await statusLine(afterSyncFailingWith: .other("Something broke"), minutesLater: 4)
+
+        #expect(statusLine == "Sync failed · synced 4m ago")
+    }
+
+    @Test func anUnauthorisedSyncAsksToSignInAgainInsteadOfShowingAStatus() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        #expect(!store.needsSignInAgain)
+
+        github.fail(with: .unauthorised)
+        await store.requestSync().value
+
+        #expect(store.needsSignInAgain)
+        #expect(store.statusLine == nil)
+        #expect(store.countText == "3")
+    }
+
+    @Test func aGoodSyncAfterSigningInAgainClearsTheRequest() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        github.fail(with: .unauthorised)
+        await store.requestSync().value
+
+        github.fail(with: nil)
+        await store.requestSync().value
+
+        #expect(!store.needsSignInAgain)
+        #expect(store.business?.count == 3)
+    }
+
+    @Test func savingANewTokenStopsAskingToSignInAgainBeforeItsFirstSync() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        github.fail(with: .unauthorised)
+        await store.requestSync().value
+
+        github.fail(with: nil)
+        await store.account.signIn(token: "ghp_new_consigliere")
+
+        #expect(!store.needsSignInAgain)
+        #expect(store.statusLine == nil)
+    }
+
+    private func startSchedule(_ store: SyncStore) -> Task<Void, Never> {
+        Task { await store.syncOnSchedule() }
+    }
+
+    private func letScheduleRun(sleeps count: Int) async {
+        for sleep in 1...count {
+            await sleeper.waitUntilAsleep(times: sleep)
+            if sleep < count {
+                sleeper.wake()
+            }
+        }
+    }
+
+    @Test func theScheduleSyncsAtOnceAndThenEveryRefreshInterval() async throws {
+        preferences.refreshInterval = .fiveMinutes
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+
+        await letScheduleRun(sleeps: 1)
+        #expect(github.requestCount == 1)
+        #expect(store.business?.count == 3)
+
+        preferences.refreshInterval = .oneMinute
+        sleeper.wake()
+        await sleeper.waitUntilAsleep(times: 2)
+        #expect(github.requestCount == 2)
+        #expect(sleeper.requests == [.seconds(300), .seconds(60)])
+    }
+
+    @Test func failedSyncsRetrySoonAndBackOffUpToTheRefreshInterval() async throws {
+        preferences.refreshInterval = .fiveMinutes
+        let github = makeGitHub(SyncFixtures.recorded)
+        github.fail(with: .offline)
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+
+        await letScheduleRun(sleeps: 7)
+
+        #expect(sleeper.requests == [15, 30, 60, 120, 240, 300, 300].map(Duration.seconds))
+        #expect(github.requestCount == 7)
+    }
+
+    @Test func aGoodSyncAfterFailuresReturnsToTheRefreshInterval() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        github.fail(with: .offline)
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+        await letScheduleRun(sleeps: 2)
+
+        github.fail(with: nil)
+        sleeper.wake()
+        await sleeper.waitUntilAsleep(times: 3)
+        github.fail(with: .offline)
+        sleeper.wake()
+        await sleeper.waitUntilAsleep(times: 4)
+
+        #expect(sleeper.requests == [15, 30, 60, 15].map(Duration.seconds))
+    }
+
+    @Test func aRateLimitedSyncWaitsForTheLimitToResetBeforeTheNextScheduledSync() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        github.fail(with: .rateLimited(resetsAt: now.addingTimeInterval(12 * 60)))
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+
+        await letScheduleRun(sleeps: 1)
+
+        #expect(sleeper.requests == [.seconds(720)])
+    }
+
+    @Test func aRateLimitedSyncWithoutAResetTimeBacksOff() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        github.fail(with: .rateLimited(resetsAt: nil))
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+
+        await letScheduleRun(sleeps: 2)
+
+        #expect(sleeper.requests == [15, 30].map(Duration.seconds))
+    }
+
+    @Test func scheduledSyncsStopWhileAskingToSignInAgain() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        github.fail(with: .unauthorised)
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        defer { schedule.cancel() }
+
+        await letScheduleRun(sleeps: 3)
+
+        #expect(github.requestCount == 1)
+        #expect(sleeper.requests == [60, 60, 60].map(Duration.seconds))
+    }
+
+    @Test func cancellingTheScheduleStopsScheduledSyncs() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        let schedule = startSchedule(store)
+        await sleeper.waitUntilAsleep(times: 1)
+
+        schedule.cancel()
+        await schedule.value
+
+        #expect(github.requestCount == 1)
+        #expect(sleeper.requests.count == 1)
     }
 
     @Test func overlappingSyncRequestsShareOneSync() async throws {

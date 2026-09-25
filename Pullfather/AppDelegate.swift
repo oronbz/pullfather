@@ -7,17 +7,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let launchAtLogin = LaunchAtLogin()
     private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin)
     private var panelController: PanelController?
-    private var tokenChangeSyncs: Task<Void, Never>?
+    private lazy var syncTriggers = SyncTriggers(store: store)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Typography.registerBundledFonts()
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
-        tokenChangeSyncs = Task { [account, store] in
-            for await _ in Observations({ account.token }) {
-                store.requestSync()
-            }
-        }
+        syncTriggers.start()
         panelController = PanelController(store: store, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
