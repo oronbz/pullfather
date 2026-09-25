@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var themeUpdates: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        quitOtherInstances()
         Typography.registerBundledFonts()
         NSApp.appearance = preferences.theme.appearance
         themeUpdates = Task { [preferences] in
@@ -52,6 +53,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyDown(for: .togglePanel) { [weak self] in
             self?.panelController?.toggle()
         }
+    }
+
+    private func quitOtherInstances() {
+        guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier)
+            .filter { $0 != .current }
+            .forEach { $0.terminate() }
     }
 
     @objc private func showSettings() {
