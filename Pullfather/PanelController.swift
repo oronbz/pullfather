@@ -18,6 +18,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let store: SyncStore
     private var countUpdates: Task<Void, Never>?
     private let activation: ActivationHandoff
+    private var isOpen = false
 
     init(store: SyncStore, avatars: AvatarCache, activation: ActivationHandoff, actions: PanelActions) {
         self.store = store
@@ -57,11 +58,11 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     @objc func toggle() {
-        panel.isVisible ? dismiss() : open()
+        isOpen ? dismiss() : open()
     }
 
     func show() {
-        guard !panel.isVisible else { return }
+        guard !isOpen else { return }
         open()
     }
 
@@ -70,6 +71,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         store.select(nil)
         store.requestSync()
         activation.activate()
+        isOpen = true
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0
+            panel.animator().alphaValue = 1
+        }
         panel.makeKeyAndOrderFront(nil)
         panel.invalidateShadow()
         statusItem.button?.highlight(true)
@@ -84,7 +90,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func contentHeightChanged() {
-        guard panel.isVisible else { return }
+        guard isOpen else { return }
         layout()
         panel.invalidateShadow()
     }
@@ -102,8 +108,15 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     private func close() {
-        panel.orderOut(nil)
+        isOpen = false
         statusItem.button?.highlight(false)
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.2
+            panel.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            guard let self, !isOpen else { return }
+            panel.orderOut(nil)
+        }
     }
 
     private func dismiss() {
@@ -112,7 +125,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        guard panel.isVisible, !isPressingStatusItem else { return }
+        guard isOpen, !isPressingStatusItem else { return }
         dismiss()
     }
 
