@@ -154,7 +154,8 @@ nonisolated struct SyncFixture {
     private static func nodes(_ pullRequests: [PullRequest]) -> [[String: Any]] {
         let formatter = ISO8601DateFormatter()
         return pullRequests.map { pullRequest -> [String: Any] in
-            [
+            let statusCheckRollup: Any = pullRequest.rollupState.map { ["state": $0] as [String: String] } ?? NSNull()
+            return [
                 "id": "PR_\(pullRequest.number)",
                 "number": pullRequest.number,
                 "title": pullRequest.title,
@@ -165,7 +166,7 @@ nonisolated struct SyncFixture {
                 "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
                 "repository": ["nameWithOwner": pullRequest.repository],
                 "author": pullRequest.author.map { ["login": $0, "avatarUrl": "https://avatars.githubusercontent.com/\($0)?s=60"] } ?? NSNull(),
-                "commits": ["nodes": [["commit": ["statusCheckRollup": pullRequest.rollupState.map { ["state": $0] } ?? NSNull()]]]],
+                "commits": ["nodes": [["commit": ["statusCheckRollup": statusCheckRollup]]]],
                 "timelineItems": ["nodes": pullRequest.requests.map { request -> [String: Any] in
                     switch request {
                     case .user(let login, let date):
