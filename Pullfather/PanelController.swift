@@ -60,6 +60,11 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.isVisible ? dismiss() : open()
     }
 
+    func show() {
+        guard !panel.isVisible else { return }
+        open()
+    }
+
     private func open() {
         guard layout() else { return }
         store.select(nil)

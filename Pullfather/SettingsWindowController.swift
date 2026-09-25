@@ -55,6 +55,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 10)
             AccountPane(account: account)
             BusinessPane(preferences: preferences)
+            NotificationsPane(preferences: preferences)
             SyncPane(preferences: preferences)
             MenuBarPane(preferences: preferences)
             GeneralPane(launchAtLogin: launchAtLogin)
@@ -118,6 +119,24 @@ private struct BusinessPane: View {
                 .controlSize(.small)
                 .tint(Palette.commitRed)
                 .fixedSize()
+            }
+        }
+    }
+}
+
+private struct NotificationsPane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Notifications") {
+            NoirRow {
+                Text("Notify when a favor is asked")
+                Spacer()
+                Toggle("Notify when a favor is asked", isOn: $preferences.notifiesArrivals)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
             }
         }
     }

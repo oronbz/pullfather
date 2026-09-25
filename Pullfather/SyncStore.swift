@@ -71,6 +71,8 @@ final class SyncStore {
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
     @ObservationIgnored private var inFlight: Task<Void, Never>?
     @ObservationIgnored private var consecutiveFailures = 0
+    @ObservationIgnored private var syncedViewer: String?
+    @ObservationIgnored var onArrivals: ([BusinessRow]) -> Void = { _ in }
 
     private static let firstRetry = Duration.seconds(15)
 
@@ -214,6 +216,7 @@ final class SyncStore {
             lastSyncedAt = nil
             failure = nil
             consecutiveFailures = 0
+            syncedViewer = nil
             return
         }
         isSyncing = true
@@ -233,6 +236,8 @@ final class SyncStore {
         lastSyncedAt = now
         failure = nil
         consecutiveFailures = 0
+        let previousIDs = syncedViewer == result.viewer ? oldestFirst.map { Set($0.map(\.id)) } : nil
+        syncedViewer = result.viewer
         oldestFirst = result.business
             .filter { !$0.isDraft }
             .map { pullRequest in
@@ -266,6 +271,9 @@ final class SyncStore {
                     checks: pullRequest.checks
                 )
             }
+        if let previousIDs, let arrivals = oldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
+            onArrivals(arrivals)
+        }
     }
 }
 

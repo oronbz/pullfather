@@ -11,11 +11,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin, activation: activation)
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
+    private lazy var notifier = ArrivalNotifier(
+        preferences: preferences,
+        openPullRequest: { NSWorkspace.shared.open($0) },
+        openPopover: { [weak self] in self?.panelController?.show() }
+    )
+    private var permissionRequests: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Typography.registerBundledFonts()
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
+        store.onArrivals = notifier.notify
+        permissionRequests = Task { [account, notifier] in
+            for await state in Observations({ account.state }) {
+                if case .signedIn(login: .some) = state {
+                    notifier.requestPermission()
+                }
+            }
+        }
         syncTriggers.start()
         panelController = PanelController(store: store, avatars: avatars, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },

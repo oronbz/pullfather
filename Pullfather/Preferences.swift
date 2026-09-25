@@ -33,6 +33,7 @@ final class Preferences {
     private static let businessOrderKey = "businessOrder"
     private static let countModeKey = "countMode"
     private static let refreshIntervalKey = "refreshIntervalMinutes"
+    private static let notifiesArrivalsKey = "notifiesArrivals"
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -48,11 +49,16 @@ final class Preferences {
         didSet { defaults.set(refreshInterval.rawValue, forKey: Self.refreshIntervalKey) }
     }
 
+    var notifiesArrivals: Bool {
+        didSet { defaults.set(notifiesArrivals, forKey: Self.notifiesArrivalsKey) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         businessOrder = defaults.string(forKey: Self.businessOrderKey).flatMap(BusinessOrder.init) ?? .newestFirst
         countMode = defaults.string(forKey: Self.countModeKey).flatMap(CountMode.init) ?? .business
         refreshInterval = RefreshInterval(rawValue: defaults.integer(forKey: Self.refreshIntervalKey)) ?? .oneMinute
+        notifiesArrivals = defaults.object(forKey: Self.notifiesArrivalsKey) as? Bool ?? true
     }
 }
 

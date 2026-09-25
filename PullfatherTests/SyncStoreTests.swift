@@ -9,6 +9,7 @@ final class SyncStoreTests {
     lazy var preferences = Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!)
     var now = SyncFixtures.recordedAt
     let sleeper = ManualSleeper()
+    var arrivals: [[String]] = []
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
@@ -36,7 +37,9 @@ final class SyncStoreTests {
     private func makeStore(_ github: FakeGitHub) throws -> SyncStore {
         try tokenStore.save("ghp_consigliere")
         let account = Account(tokenStore: tokenStore, makeTransport: github.transport(token:))
-        return SyncStore(account: account, preferences: preferences, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
+        let store = SyncStore(account: account, preferences: preferences, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
+        store.onArrivals = { [unowned self] in arrivals.append($0.map(\.id)) }
+        return store
     }
 
     @Test func businessShowsTheNewestReviewRequestFirstByDefault() async throws {
@@ -301,6 +304,14 @@ final class SyncStoreTests {
 
         #expect(store.isStale == (expected != nil))
         #expect(store.statusLine == expected)
+    }
+
+    @Test func arrivalNotificationsAreOnByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.notifiesArrivals)
+
+        preferences.notifiesArrivals = false
+
+        #expect(!Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).notifiesArrivals)
     }
 
     @Test func theRefreshIntervalIsOneMinuteByDefaultAndRememberedAcrossLaunches() {
@@ -597,6 +608,79 @@ final class SyncStoreTests {
         #expect(store.selection == nil)
         store.moveSelection(.down)
         #expect(store.selection == .business("PR_2"))
+    }
+
+    private var first: SyncFixture.PullRequest { SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1)) }
+    private var second: SyncFixture.PullRequest { SyncFixture.PullRequest(number: 2, createdAt: ago(hours: 2)) }
+
+    @Test func pullRequestsNewToBusinessArrive() async throws {
+        let github = makeGitHub(SyncFixture(business: [first]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [first, second]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_2"]])
+    }
+
+    @Test func theFirstSyncAfterLaunchHasNoArrivals() async throws {
+        let store = try makeStore(makeGitHub(SyncFixtures.recorded))
+
+        await store.requestSync().value
+
+        #expect(store.business?.count == 3)
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func aFailedFirstSyncLeavesTheNextGoodOneWithoutArrivals() async throws {
+        let github = makeGitHub(SyncFixtures.recorded)
+        let store = try makeStore(github)
+        github.fail(with: .offline)
+        await store.requestSync().value
+
+        github.fail(with: nil)
+        await store.requestSync().value
+
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func pullRequestsLeavingBusinessDoNotArrive() async throws {
+        let github = makeGitHub(SyncFixture(business: [first, second]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [second]).data)
+        await store.requestSync().value
+
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func switchingToAnotherAccountDoesNotReplayItsBusiness() async throws {
+        let github = makeGitHub(SyncFixture(business: [first]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(viewer: "fredo", business: [first, second]).data)
+        await store.requestSync().value
+
+        #expect(store.business?.count == 2)
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func signingInAgainDoesNotReplayBusiness() async throws {
+        let github = makeGitHub(SyncFixture(business: []).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        store.account.signOut()
+        await store.requestSync().value
+        github.respond(with: SyncFixtures.recorded)
+        await store.account.signIn(token: "ghp_consigliere")
+        await store.requestSync().value
+
+        #expect(store.business?.count == 3)
+        #expect(arrivals.isEmpty)
     }
 
     @Test func aPullRequestInBothSectionsIsSelectedOncePerSection() async throws {
