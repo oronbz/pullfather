@@ -114,8 +114,10 @@ final class PanelController: NSObject, NSWindowDelegate {
             context.duration = 0.2
             panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in
-            guard let self, !isOpen else { return }
-            panel.orderOut(nil)
+            MainActor.assumeIsolated {
+                guard let self, !self.isOpen else { return }
+                self.panel.orderOut(nil)
+            }
         }
     }
 
