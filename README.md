@@ -10,6 +10,8 @@
   A macOS menu bar app for GitHub pull requests. Two lists, always current, nothing else.
 </p>
 
+https://github.com/user-attachments/assets/58638500-6b19-45d8-bdd4-b66b340c8818
+
 <p align="center">
   <img src="design/popover-reference.png" width="640" alt="The Pullfather popover">
 </p>
