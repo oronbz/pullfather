@@ -53,10 +53,9 @@ The app is ad-hoc signed, not notarized. If macOS refuses to open it the first t
 
 ## Signing in
 
-Paste a GitHub personal access token. If you already use the `gh` CLI, you can import its token with one click instead.
+Paste a classic GitHub personal access token with `repo` scope. It covers every org you belong to. If you already use the `gh` CLI, you can import its token with one click instead.
 
-- **Classic token with `repo` scope** (recommended). It covers every org you belong to.
-- **Fine-grained token**. It works too, but only covers a single owner, so pull requests from your other orgs won't show.
+Fine-grained tokens aren't supported. They only cover a single owner, so pull requests from your other orgs wouldn't show.
 
 The token is stored in a file in `~/Library/Application Support/Pullfather` that only your user account can read. It never goes in the Keychain, so you never get a Keychain password prompt, not even after an update. [ADR-0002](docs/adr/0002-token-in-file-not-keychain.md) explains why.
 

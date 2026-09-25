@@ -34,6 +34,26 @@ final class AccountTests {
         #expect(tokenStore.load() == nil)
     }
 
+    @Test func aFineGrainedTokenIsRefusedWithoutAskingGitHub() async {
+        let account = makeAccount(FakeGitHub(viewers: ["github_pat_11CAPOREGIME": "clemenza"]))
+
+        await account.signIn(token: "github_pat_11CAPOREGIME")
+
+        #expect(account.state == .signedOut)
+        #expect(account.signInError == "Fine-grained tokens aren't supported. Use a classic token with repo scope.")
+        #expect(tokenStore.load() == nil)
+    }
+
+    @Test func aFineGrainedTokenSavedBeforeTheRefusalStaysSignedIn() async throws {
+        try tokenStore.save("github_pat_11CAPOREGIME")
+        let account = makeAccount(FakeGitHub(viewers: ["github_pat_11CAPOREGIME": "clemenza"]))
+
+        await account.restore()
+
+        #expect(account.state == .signedIn(login: "clemenza"))
+        #expect(account.token == "github_pat_11CAPOREGIME")
+    }
+
     @Test func aRejectedReplacementKeepsTheCurrentToken() async throws {
         try tokenStore.save("ghp_consigliere")
         let account = makeAccount(FakeGitHub(viewers: ["ghp_consigliere": "tomhagen"], failure: .unauthorised))

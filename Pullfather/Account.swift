@@ -30,6 +30,10 @@ final class Account {
     func signIn(token: String) async -> Bool {
         let token = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !token.isEmpty, !isValidating else { return false }
+        guard !TokenStore.isFineGrained(token) else {
+            signInError = "Fine-grained tokens aren't supported. Use a classic token with repo scope."
+            return false
+        }
         isValidating = true
         defer { isValidating = false }
         signInError = nil

@@ -2,7 +2,6 @@ import SwiftUI
 
 struct TokenForm: View {
     static let classicTokenURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo&description=Pullfather")!
-    static let fineGrainedTokenURL = URL(string: "https://github.com/settings/personal-access-tokens/new")!
 
     let account: Account
     let onSignedIn: () -> Void
@@ -45,20 +44,13 @@ struct TokenForm: View {
                 }
                 .onChange(of: token) { account.dismissSignInError() }
 
-            if TokenStore.isFineGrained(token.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                Notice(symbol: "exclamationmark.triangle.fill", color: Palette.amber,
-                       text: "Fine-grained tokens cover only one owner. Pull requests from other owners won't show up.")
-            }
             if let error = account.signInError {
                 Notice(symbol: "xmark.octagon.fill", color: Palette.checksFailing, text: error)
             }
 
             HStack(spacing: 4) {
-                Text("Create a token:")
-                Link("Classic (recommended)", destination: Self.classicTokenURL)
-                    .foregroundStyle(Palette.brass)
-                Text("·")
-                Link("Fine-grained", destination: Self.fineGrainedTokenURL)
+                Text("Needs a classic token with repo scope.")
+                Link("Create one", destination: Self.classicTokenURL)
                     .foregroundStyle(Palette.brass)
             }
             .font(.system(size: 11.5))
