@@ -68,4 +68,5 @@ macOS 26 (Tahoe) or later.
 - [`CONTEXT.md`](CONTEXT.md) defines the domain language: Business, Family, Sync, Waiting Time, Arrival. Use these terms in code and issues.
 - [`docs/adr/`](docs/adr) records the decisions that would surprise you.
 - [`design/`](design) holds the icon, the menu bar glyph and the popover spec.
+- [`docs/releasing.md`](docs/releasing.md) covers cutting a release and the Homebrew cask.
 - Issues are the plan. Anything labelled `ready-for-agent` is fair game.
