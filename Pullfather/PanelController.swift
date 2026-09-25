@@ -77,8 +77,7 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     @discardableResult
     private func layout() -> Bool {
-        guard let button = statusItem.button, let buttonWindow = button.window, let screen = buttonWindow.screen else { return false }
-        let anchor = buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
+        guard let anchor = statusItemFrame, let screen = statusItem.button?.window?.screen else { return false }
         let frame = PanelPlacement.frame(below: anchor, contentHeight: hostingView.fittingSize.height, within: screen.visibleFrame)
         panel.setFrame(frame, display: true)
         return true
@@ -113,11 +112,18 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        if let event = NSApp.currentEvent, event.type == .leftMouseDown, event.window === statusItem.button?.window {
-            return
-        }
-        guard panel.isVisible else { return }
+        guard panel.isVisible, !isPressingStatusItem else { return }
         dismiss()
+    }
+
+    private var isPressingStatusItem: Bool {
+        guard NSEvent.pressedMouseButtons & 1 != 0, let anchor = statusItemFrame else { return false }
+        return anchor.contains(NSEvent.mouseLocation)
+    }
+
+    private var statusItemFrame: NSRect? {
+        guard let button = statusItem.button, let buttonWindow = button.window else { return nil }
+        return buttonWindow.convertToScreen(button.convert(button.bounds, to: nil))
     }
 }
 
