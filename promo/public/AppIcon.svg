@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" role="img" aria-label="The Pullfather app icon: a black fedora with a git branch tucked in its band like a feather">
+<defs>
+<filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="20" stdDeviation="14" flood-color="#140C08" flood-opacity="0.35"></feDropShadow></filter>
+<radialGradient id="bgF" cx="50%" cy="28%" r="85%">
+<stop offset="0" style="stop-color: #A3222A"></stop>
+<stop offset="0.6" style="stop-color: #6A1017"></stop>
+<stop offset="1" style="stop-color: #3A070B"></stop>
+</radialGradient>
+<clipPath id="sqF"><rect x="100" y="100" width="824" height="824" rx="185"></rect></clipPath>
+</defs>
+<rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bgF)" filter="url(#shadow)"></rect>
+<g style="clip-path: url(#sqF)">
+<path d="M452 100 L572 100 L860 924 L164 924 Z" fill="#FFF3E0" style="opacity: 0.06"></path>
+<ellipse cx="512" cy="776" rx="260" ry="24" fill="#000000" style="opacity: 0.35"></ellipse><ellipse cx="512" cy="624" rx="322" ry="80" fill="#121010"></ellipse>
+<ellipse cx="512" cy="618" rx="314" ry="72" fill="none" stroke="#FFFFFF" style="stroke-width: 3px; opacity: 0.07"></ellipse>
+<path d="M324 616 C318 486 350 364 420 324 C462 302 492 332 512 324 C532 332 562 302 604 324 C674 364 706 486 700 616 A188 42 0 0 1 324 616 Z" fill="#1D1818"></path>
+<path d="M360 600 C356 490 380 390 424 346 C400 400 392 500 396 604 Z" fill="#FFFFFF" style="opacity: 0.05"></path>
+<path d="M436 360 C476 342 548 342 588 360" stroke="#0D0A0A" fill="none" style="stroke-width: 10px; stroke-linecap: round"></path>
+<path d="M330 548 C420 568 604 568 694 548 L698 604 C604 626 420 626 326 604 Z" fill="#EDE3D1"></path>
+<path d="M668 578 L780 350" stroke="#EDE3D1" fill="none" style="stroke-width: 16px; stroke-linecap: round"></path>
+<path d="M722 470 C748 440 786 430 826 436" stroke="#EDE3D1" fill="none" style="stroke-width: 14px; stroke-linecap: round"></path>
+<circle cx="668" cy="580" r="18" fill="#1D1818"></circle>
+<circle cx="826" cy="436" r="24" fill="#EDE3D1"></circle>
+<circle cx="784" cy="342" r="34" fill="#B3202A" stroke="#EDE3D1" style="stroke-width: 10px"></circle>
+</g>
+<rect x="101" y="101" width="822" height="822" rx="184" fill="none" stroke="#FFFFFF" style="stroke-width: 2px; opacity: 0.1"></rect>
+</svg>
