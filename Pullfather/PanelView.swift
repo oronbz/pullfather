@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PanelView: View {
     let store: SyncStore
+    let avatars: AvatarCache
     let actions: PanelActions
     var onHeightChange: (CGFloat) -> Void = { _ in }
     private let cornerRadius: CGFloat = 12
@@ -35,7 +36,7 @@ struct PanelView: View {
             case .signedIn:
                 ScrollView {
                     VStack(spacing: 16) {
-                        BusinessSection(rows: store.business, open: actions.openPullRequest)
+                        BusinessSection(rows: store.business, syncedAt: store.lastSyncedAt, avatars: avatars, open: actions.openPullRequest)
                         FamilySection(rows: store.family, open: actions.openPullRequest)
                     }
                     .padding(.horizontal, 6)
@@ -93,6 +94,7 @@ private struct Hairline: View {
 #Preview("Signed out") {
     PanelView(
         store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
+        avatars: .preview,
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
@@ -100,6 +102,7 @@ private struct Hairline: View {
 #Preview("Business and Family") {
     PanelView(
         store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+        avatars: .preview,
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
@@ -107,6 +110,7 @@ private struct Hairline: View {
 #Preview("Stale") {
     PanelView(
         store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
+        avatars: .preview,
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
@@ -114,6 +118,7 @@ private struct Hairline: View {
 #Preview("Sign in again") {
     PanelView(
         store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
+        avatars: .preview,
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }
@@ -121,6 +126,7 @@ private struct Hairline: View {
 #Preview("Empty") {
     PanelView(
         store: .preview(business: [], family: []),
+        avatars: .preview,
         actions: PanelActions(openPullRequest: { _ in }, openGitHub: {}, openSettings: {}, quit: {})
     )
 }

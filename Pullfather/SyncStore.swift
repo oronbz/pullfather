@@ -8,6 +8,7 @@ struct BusinessRow: Identifiable, Equatable {
     let url: URL
     let repository: String
     let author: String
+    let avatarURL: URL?
     let waitingSince: Date
     let waitingTime: String
     let checks: Checks?
@@ -191,6 +192,7 @@ final class SyncStore {
                     url: pullRequest.url,
                     repository: pullRequest.repository,
                     author: pullRequest.author,
+                    avatarURL: pullRequest.authorAvatarURL,
                     waitingSince: waitingSince,
                     waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
                     checks: pullRequest.checks
@@ -219,11 +221,11 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", waitingSince: .now, waitingTime: "2h", checks: .passing),
+                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", waitingSince: .now, waitingTime: "5h", checks: .running),
+                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", waitingSince: .now, waitingTime: "1d", checks: .failing),
+                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing),
     ]
 }
 

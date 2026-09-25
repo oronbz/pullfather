@@ -2,6 +2,8 @@ import SwiftUI
 
 struct BusinessSection: View {
     let rows: [BusinessRow]?
+    let syncedAt: Date?
+    let avatars: AvatarCache
     let open: (URL) -> Void
 
     var body: some View {
@@ -12,7 +14,7 @@ struct BusinessSection: View {
             rows: rows
         ) { row in
             PanelRow(help: row.title, action: { open(row.url) }) {
-                InitialsAvatar(login: row.author)
+                AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
                 RowText(title: row.title, metadata: row.metadata)
                 Spacer(minLength: 8)
                 if let checks = row.checks {
@@ -23,7 +25,39 @@ struct BusinessSection: View {
     }
 }
 
+struct AuthorAvatar: View {
+    let login: String
+    let url: URL?
+    let syncedAt: Date?
+    let avatars: AvatarCache
+
+    var body: some View {
+        Group {
+            if let image = url.flatMap(avatars.image(for:)) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFill()
+                    .frame(width: InitialsAvatar.size, height: InitialsAvatar.size)
+                    .clipShape(.circle)
+            } else {
+                InitialsAvatar(login: login)
+            }
+        }
+        .task(id: url) { load() }
+        .onChange(of: syncedAt) { load() }
+    }
+
+    private func load() {
+        if let url {
+            avatars.load(url)
+        }
+    }
+}
+
 struct InitialsAvatar: View {
+    static let size: CGFloat = 30
+
     private static let colors: [Color] = [
         Color(hex: 0x4A3B5E), Color(hex: 0x2F4A4A), Color(hex: 0x5C3A2C),
         Color(hex: 0x3B4A2F), Color(hex: 0x5A2F3A), Color(hex: 0x2F3B5A),
@@ -35,7 +69,7 @@ struct InitialsAvatar: View {
         Text(Self.initials(of: login))
             .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(Palette.bone)
-            .frame(width: 30, height: 30)
+            .frame(width: Self.size, height: Self.size)
             .background(Self.color(for: login), in: .circle)
     }
 
@@ -53,7 +87,7 @@ struct InitialsAvatar: View {
 
 #if DEBUG
 #Preview("Business") {
-    BusinessSection(rows: BusinessRow.previews, open: { _ in })
+    BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, open: { _ in })
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)
@@ -61,7 +95,7 @@ struct InitialsAvatar: View {
 }
 
 #Preview("Empty") {
-    BusinessSection(rows: [], open: { _ in })
+    BusinessSection(rows: [], syncedAt: nil, avatars: .preview, open: { _ in })
         .padding(6)
         .frame(width: PanelPlacement.width)
         .background(Palette.surface)

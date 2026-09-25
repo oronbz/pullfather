@@ -53,6 +53,26 @@ final class SyncStoreTests {
         #expect(row.url == URL(string: "https://github.com/corleone/olive-oil/pull/412"))
     }
 
+    @Test func businessRowsShowTheAuthorsAvatar() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.business?.map(\.avatarURL) == [
+            URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"),
+            URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"),
+            URL(string: "https://avatars.githubusercontent.com/u/1003?s=60&v=4"),
+        ])
+    }
+
+    @Test func aDeletedAuthorHasNoAvatar() async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, author: nil, createdAt: ago(hours: 1))
+
+        let store = try await sync(SyncFixture(business: [pullRequest]).data)
+
+        let row = try #require(store.business?.first)
+        #expect(row.author == "ghost")
+        #expect(row.avatarURL == nil)
+    }
+
     @Test func businessCanShowTheLongestWaitingFirst() async throws {
         preferences.businessOrder = .oldestFirst
 

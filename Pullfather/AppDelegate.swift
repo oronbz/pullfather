@@ -4,6 +4,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let account = Account(tokenStore: .standard, makeTransport: { URLSessionTransport(token: $0) })
     private let preferences = Preferences()
     private lazy var store = SyncStore(account: account, preferences: preferences)
+    private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
     private lazy var settingsWindow = SettingsWindowController(account: account, preferences: preferences, launchAtLogin: launchAtLogin)
     private var panelController: PanelController?
@@ -14,7 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
         syncTriggers.start()
-        panelController = PanelController(store: store, actions: PanelActions(
+        panelController = PanelController(store: store, avatars: avatars, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
             openSettings: { [settingsWindow] in settingsWindow.show() },

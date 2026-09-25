@@ -19,7 +19,7 @@ nonisolated enum SyncFixtures {
               "isDraft": false,
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/olive-oil" },
-              "author": { "login": "mike-corleone" },
+              "author": { "login": "mike-corleone", "avatarUrl": "https://avatars.githubusercontent.com/u/1001?s=60&v=4" },
               "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "SUCCESS" } } }] },
               "timelineItems": {
                 "nodes": [
@@ -44,7 +44,7 @@ nonisolated enum SyncFixtures {
               "isDraft": false,
               "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/casino" },
-              "author": { "login": "sonny" },
+              "author": { "login": "sonny", "avatarUrl": "https://avatars.githubusercontent.com/u/1002?s=60&v=4" },
               "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "PENDING" } } }] },
               "timelineItems": {
                 "nodes": [
@@ -65,7 +65,7 @@ nonisolated enum SyncFixtures {
               "isDraft": false,
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/casino" },
-              "author": { "login": "luca-brasi" },
+              "author": { "login": "luca-brasi", "avatarUrl": "https://avatars.githubusercontent.com/u/1003?s=60&v=4" },
               "commits": { "nodes": [{ "commit": { "statusCheckRollup": { "state": "FAILURE" } } }] },
               "timelineItems": { "nodes": [] }
             }
@@ -129,7 +129,7 @@ nonisolated struct SyncFixture {
         var number: Int
         var title = "Fix race in token refresh"
         var repository = "corleone/olive-oil"
-        var author = "sonny"
+        var author: String? = "sonny"
         var createdAt: Date
         var updatedAt: Date?
         var isDraft = false
@@ -164,7 +164,7 @@ nonisolated struct SyncFixture {
                 "isDraft": pullRequest.isDraft,
                 "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
                 "repository": ["nameWithOwner": pullRequest.repository],
-                "author": ["login": pullRequest.author],
+                "author": pullRequest.author.map { ["login": $0, "avatarUrl": "https://avatars.githubusercontent.com/\($0)?s=60"] } ?? NSNull(),
                 "commits": ["nodes": [["commit": ["statusCheckRollup": pullRequest.rollupState.map { ["state": $0] } ?? NSNull()]]]],
                 "timelineItems": ["nodes": pullRequest.requests.map { request -> [String: Any] in
                     switch request {

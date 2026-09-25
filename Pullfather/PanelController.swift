@@ -15,11 +15,12 @@ final class PanelController: NSObject, NSWindowDelegate {
     private let store: SyncStore
     private var countUpdates: Task<Void, Never>?
 
-    init(store: SyncStore, actions: PanelActions) {
+    init(store: SyncStore, avatars: AvatarCache, actions: PanelActions) {
         self.store = store
         super.init()
         hostingView = NSHostingView(rootView: PanelView(
             store: store,
+            avatars: avatars,
             actions: PanelActions(
                 openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
                 openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
