@@ -22,7 +22,13 @@ https://github.com/user-attachments/assets/58638500-6b19-45d8-bdd4-b66b340c8818
 brew install --cask oronbz/tap/pullfather
 ```
 
-Upgrade with `brew upgrade --cask pullfather`, or grab the zip from [Releases](https://github.com/oronbz/pullfather/releases).
+To upgrade:
+
+```sh
+brew update && brew upgrade --cask pullfather
+```
+
+Or grab the zip from [Releases](https://github.com/oronbz/pullfather/releases).
 
 The app is ad-hoc signed, not notarized. If macOS refuses to open it the first time, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
