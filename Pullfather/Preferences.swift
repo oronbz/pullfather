@@ -12,6 +12,12 @@ enum CountMode: String, CaseIterable {
     case off
 }
 
+enum Theme: String, CaseIterable {
+    case noir
+    case bone
+    case system
+}
+
 enum RefreshInterval: Int, CaseIterable {
     case oneMinute = 1
     case fiveMinutes = 5
@@ -34,6 +40,7 @@ final class Preferences {
     private static let countModeKey = "countMode"
     private static let refreshIntervalKey = "refreshIntervalMinutes"
     private static let notifiesArrivalsKey = "notifiesArrivals"
+    private static let themeKey = "theme"
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -53,12 +60,17 @@ final class Preferences {
         didSet { defaults.set(notifiesArrivals, forKey: Self.notifiesArrivalsKey) }
     }
 
+    var theme: Theme {
+        didSet { defaults.set(theme.rawValue, forKey: Self.themeKey) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         businessOrder = defaults.string(forKey: Self.businessOrderKey).flatMap(BusinessOrder.init) ?? .newestFirst
         countMode = defaults.string(forKey: Self.countModeKey).flatMap(CountMode.init) ?? .business
         refreshInterval = RefreshInterval(rawValue: defaults.integer(forKey: Self.refreshIntervalKey)) ?? .oneMinute
         notifiesArrivals = defaults.object(forKey: Self.notifiesArrivalsKey) as? Bool ?? true
+        theme = defaults.string(forKey: Self.themeKey).flatMap(Theme.init) ?? .noir
     }
 }
 

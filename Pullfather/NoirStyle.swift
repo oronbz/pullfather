@@ -62,7 +62,7 @@ struct NoirButtonStyle: ButtonStyle {
     }
 
     private func background(pressed: Bool) -> Color {
-        let base = prominent ? Palette.commitRed : Palette.bone.opacity(0.1)
+        let base = prominent ? Palette.commitRed : Palette.ink.opacity(0.1)
         return pressed ? base.opacity(0.7) : base
     }
 }

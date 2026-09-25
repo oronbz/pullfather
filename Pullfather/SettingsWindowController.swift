@@ -23,8 +23,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         window.styleMask = [.titled, .closable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
-        window.backgroundColor = NSColor(Palette.windowSurface)
-        window.appearance = NSAppearance(named: .darkAqua)
+        window.backgroundColor = Palette.windowBackground
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
@@ -57,6 +56,7 @@ struct SettingsView: View {
             BusinessPane(preferences: preferences)
             NotificationsPane(preferences: preferences)
             SyncPane(preferences: preferences)
+            AppearancePane(preferences: preferences)
             MenuBarPane(preferences: preferences)
             GeneralPane(launchAtLogin: launchAtLogin)
         }
@@ -65,7 +65,6 @@ struct SettingsView: View {
         .padding(.bottom, 24)
         .frame(width: 480, alignment: .topLeading)
         .background(Palette.windowSurface)
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -165,6 +164,29 @@ private struct SyncPane: View {
     }
 }
 
+private struct AppearancePane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Appearance") {
+            NoirRow {
+                Text("Theme")
+                Spacer()
+                Picker("Theme", selection: $preferences.theme) {
+                    Text("Noir").tag(Theme.noir)
+                    Text("Bone").tag(Theme.bone)
+                    Text("System").tag(Theme.system)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .controlSize(.small)
+                .tint(Palette.commitRed)
+                .fixedSize()
+            }
+        }
+    }
+}
+
 private struct MenuBarPane: View {
     @Bindable var preferences: Preferences
 
@@ -228,13 +250,19 @@ private struct GeneralPane: View {
     }
 }
 
+#if DEBUG
 #Preview("Signed out") {
-    SettingsView(account: .preview(signedIn: false), preferences: .preview, launchAtLogin: LaunchAtLogin())
-        .frame(minHeight: 370, maxHeight: .infinity, alignment: .top)
-        .background(Palette.windowSurface)
+    BothAppearances {
+        SettingsView(account: .preview(signedIn: false), preferences: .preview, launchAtLogin: LaunchAtLogin())
+            .frame(minHeight: 370, maxHeight: .infinity, alignment: .top)
+            .background(Palette.windowSurface)
+    }
 }
 
 #Preview("Signed in") {
-    SettingsView(account: .preview(signedIn: true), preferences: .preview, launchAtLogin: LaunchAtLogin())
-        .fixedSize()
+    BothAppearances {
+        SettingsView(account: .preview(signedIn: true), preferences: .preview, launchAtLogin: LaunchAtLogin())
+            .fixedSize()
+    }
 }
+#endif

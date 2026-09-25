@@ -51,3 +51,9 @@ _Avoid_: Poll, fetch, reload
 
 **Arrival**:
 A pull request entering Business that was not there on the previous Sync.
+
+### Appearance
+
+**Theme**:
+The palette the popover and Settings use: Noir (dark, the default), Bone (light), or System, which follows the macOS light/dark setting.
+_Avoid_: Dark mode, light mode (as setting names)

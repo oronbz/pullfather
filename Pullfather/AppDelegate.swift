@@ -17,9 +17,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openPopover: { [weak self] in self?.panelController?.show() }
     )
     private var permissionRequests: Task<Void, Never>?
+    private var themeUpdates: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Typography.registerBundledFonts()
+        NSApp.appearance = preferences.theme.appearance
+        themeUpdates = Task { [preferences] in
+            for await theme in Observations({ preferences.theme }) {
+                NSApp.appearance = theme.appearance
+            }
+        }
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
         store.onArrivals = notifier.notify

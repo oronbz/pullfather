@@ -322,6 +322,14 @@ final class SyncStoreTests {
         #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).refreshInterval == .thirtyMinutes)
     }
 
+    @Test func theThemeIsNoirByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.theme == .noir)
+
+        preferences.theme = .system
+
+        #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).theme == .system)
+    }
+
     private func statusLine(afterSyncFailingWith failure: GitHubFailure, minutesLater minutes: Double) async throws -> String? {
         let github = makeGitHub(SyncFixtures.recorded)
         let store = try makeStore(github)

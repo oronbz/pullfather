@@ -47,7 +47,7 @@ private struct ReviewBadge: View {
 extension ReviewBadge {
     init(reviewState: ReviewState) {
         switch reviewState {
-        case .approved: self.init(title: "Approved", color: Palette.checksPassing)
+        case .approved: self.init(title: "Approved", color: Palette.approved)
         case .changesRequested: self.init(title: "Changes requested", color: Palette.amber)
         }
     }
@@ -55,18 +55,20 @@ extension ReviewBadge {
 
 #if DEBUG
 #Preview("Family") {
-    FamilySection(rows: FamilyRow.previews, selection: .constant(.family("5")), actions: .preview)
-        .padding(6)
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        FamilySection(rows: FamilyRow.previews, selection: .constant(.family("5")), actions: .preview)
+            .padding(6)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
 
 #Preview("Empty") {
-    FamilySection(rows: [], selection: .constant(nil), actions: .preview)
-        .padding(6)
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        FamilySection(rows: [], selection: .constant(nil), actions: .preview)
+            .padding(6)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
 #endif

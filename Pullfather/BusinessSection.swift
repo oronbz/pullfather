@@ -88,18 +88,20 @@ struct InitialsAvatar: View {
 
 #if DEBUG
 #Preview("Business") {
-    BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
-        .padding(6)
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
+            .padding(6)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
 
 #Preview("Empty") {
-    BusinessSection(rows: [], syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
-        .padding(6)
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        BusinessSection(rows: [], syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
+            .padding(6)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
 #endif

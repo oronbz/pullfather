@@ -137,10 +137,13 @@ private struct Notice: View {
     }
 }
 
+#if DEBUG
 #Preview("With gh") {
-    TokenForm(account: .preview(signedIn: false), cliToken: "gho_preview")
-        .padding(16)
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        TokenForm(account: .preview(signedIn: false), cliToken: "gho_preview")
+            .padding(16)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
+#endif

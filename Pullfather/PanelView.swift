@@ -65,7 +65,6 @@ struct PanelView: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(Palette.hairline)
         }
-        .environment(\.colorScheme, .dark)
         .onGeometryChange(for: CGFloat.self, of: \.size.height) { onHeightChange($0) }
         .onChange(of: store.needsSignInAgain) { isSigningInAgain = false }
     }
@@ -108,42 +107,52 @@ private struct Hairline: View {
 
 #if DEBUG
 #Preview("Signed out") {
-    PanelView(
-        store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
-        avatars: .preview,
-        actions: .preview
-    )
+    BothAppearances {
+        PanelView(
+            store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
+            avatars: .preview,
+            actions: .preview
+        )
+    }
 }
 
 #Preview("Business and Family") {
-    PanelView(
-        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
-        avatars: .preview,
-        actions: .preview
-    )
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+            avatars: .preview,
+            actions: .preview
+        )
+    }
 }
 
 #Preview("Stale") {
-    PanelView(
-        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
-        avatars: .preview,
-        actions: .preview
-    )
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
+            avatars: .preview,
+            actions: .preview
+        )
+    }
 }
 
 #Preview("Sign in again") {
-    PanelView(
-        store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
-        avatars: .preview,
-        actions: .preview
-    )
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
+            avatars: .preview,
+            actions: .preview
+        )
+    }
 }
 
 #Preview("Empty") {
-    PanelView(
-        store: .preview(business: [], family: []),
-        avatars: .preview,
-        actions: .preview
-    )
+    BothAppearances {
+        PanelView(
+            store: .preview(business: [], family: []),
+            avatars: .preview,
+            actions: .preview
+        )
+    }
 }
 #endif

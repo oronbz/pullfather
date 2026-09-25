@@ -25,9 +25,12 @@ enum SignedInLine {
     }
 }
 
+#if DEBUG
 #Preview {
-    SignInCard(account: .preview(signedIn: false))
-        .frame(width: PanelPlacement.width)
-        .background(Palette.surface)
-        .environment(\.colorScheme, .dark)
+    BothAppearances {
+        SignInCard(account: .preview(signedIn: false))
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
 }
+#endif

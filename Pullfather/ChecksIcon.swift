@@ -47,13 +47,14 @@ struct ChecksIcon: View {
 
 #if DEBUG
 #Preview("Checks") {
-    HStack(spacing: 12) {
-        ChecksIcon(checks: .passing)
-        ChecksIcon(checks: .running)
-        ChecksIcon(checks: .failing)
+    BothAppearances {
+        HStack(spacing: 12) {
+            ChecksIcon(checks: .passing)
+            ChecksIcon(checks: .running)
+            ChecksIcon(checks: .failing)
+        }
+        .padding(12)
+        .background(Palette.surface)
     }
-    .padding(12)
-    .background(Palette.surface)
-    .environment(\.colorScheme, .dark)
 }
 #endif
