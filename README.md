@@ -14,7 +14,15 @@
   <img src="design/popover-reference.png" width="640" alt="The Pullfather popover">
 </p>
 
-> **Status:** in development. The design is settled; the code is on its way. Follow the plan in [#1](https://github.com/oronbz/pullfather/issues/1).
+## Install
+
+```sh
+brew install --cask oronbz/tap/pullfather
+```
+
+Upgrade with `brew upgrade --cask pullfather`, or grab the zip from [Releases](https://github.com/oronbz/pullfather/releases).
+
+The app is ad-hoc signed, not notarized. If macOS refuses to open it the first time, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ## The arrangement
 
@@ -33,23 +41,13 @@ Other PR menu bar apps refresh the count and the list separately, so the number 
 - It syncs every minute by default, and again when your Mac wakes or the network comes back.
 - If GitHub is unreachable, you keep the last good list and a quiet note saying how old it is.
 
-## What's coming in 0.1.0
+## What you get
 
 - Business and Family sections, with CI status on every row and review badges on yours
 - A notification when a new pull request needs your review ("3 new favors asked" when they come in bunches)
 - Keyboard first: a global hotkey (⌃⇧⌘P by default), arrow keys and Enter, plus ⌘R to refresh
-- Follows your system's light or dark appearance
+- Noir by default, Bone if you prefer it light, or follow the system
 - Launches at login and has no Dock icon
-
-## Install
-
-Once 0.1.0 is out:
-
-```sh
-brew install --cask oronbz/tap/pullfather
-```
-
-The app is ad-hoc signed, not notarized. If macOS refuses to open it the first time, go to **System Settings → Privacy & Security** and click **Open Anyway**.
 
 ## Signing in
 
