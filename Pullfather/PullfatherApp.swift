@@ -4,7 +4,9 @@ import AppKit
 enum PullfatherApp {
     static func main() {
         let app = NSApplication.shared
-        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
+        Typography.registerBundledFonts()
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["XCTestConfigurationFilePath"] == nil, environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else {
             app.run()
             return
         }

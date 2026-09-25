@@ -21,7 +21,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         quitOtherInstances()
-        Typography.registerBundledFonts()
         NSApp.appearance = preferences.theme.appearance
         themeUpdates = Task { [preferences] in
             for await theme in Observations({ preferences.theme }) {
