@@ -1,0 +1,117 @@
+{
+  "fps": 30,
+  "duration": 67.5,
+  "bpm": 96,
+  "waltzStart": 24.6,
+  "scenes": {
+    "leader": [
+      0,
+      4
+    ],
+    "presents": [
+      4,
+      8.5
+    ],
+    "city": [
+      8.5,
+      16
+    ],
+    "papers": [
+      16,
+      23
+    ],
+    "reveal": [
+      23,
+      30.225
+    ],
+    "demo": [
+      30.225,
+      54.6
+    ],
+    "offer": [
+      54.6,
+      62.1
+    ],
+    "end": [
+      62.1,
+      67.5
+    ]
+  },
+  "cues": {
+    "countdown": [
+      0,
+      1,
+      2
+    ],
+    "tuning": [
+      3.8,
+      8.2,
+      15.7
+    ],
+    "thunderFlash": 9.0,
+    "radioVoice": 9.8,
+    "paperSpins": [
+      [
+        16.0,
+        17.2
+      ],
+      [
+        19.4,
+        20.6
+      ]
+    ],
+    "spotlight": 23.3,
+    "titleSlam": 24.6,
+    "tagline": {
+      "start": 26.6,
+      "perChar": 0.045,
+      "text": "It's not personal. It's just business logic."
+    },
+    "menubarIn": 30.225,
+    "glyphClick": 31.3,
+    "businessCaption": 32.1,
+    "familyCaption": 37.725,
+    "refresh": 44.5,
+    "arrival": 45.225,
+    "keysCaption": 48.975,
+    "keyPresses": [
+      49.55,
+      49.7,
+      49.85,
+      50.0
+    ],
+    "popoverReopen": 50.25,
+    "offerCard": 54.6,
+    "terminal": {
+      "start": 58.35,
+      "perChar": 0.04,
+      "text": "brew install --cask oronbz/tap/pullfather"
+    },
+    "enter": 60.225,
+    "finalChord": 62.1,
+    "irisClose": [
+      65.7,
+      66.8
+    ],
+    "runout": 66.5,
+    "cityCaptions": [
+      11.0,
+      13.3
+    ],
+    "stamps": [
+      18.1,
+      21.6
+    ],
+    "offerLines": [
+      54.9,
+      56.0
+    ],
+    "terminalIn": 57.8,
+    "arrowKeys": [
+      51.0,
+      51.5
+    ],
+    "enterRow": 52.1,
+    "freshCaption": 43.35
+  }
+}
