@@ -25,9 +25,22 @@
 		A10000000000000000000012 /* PullfatherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PullfatherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		820D8E2A306D0C3C00D49AAA /* Exceptions for "Pullfather" folder in "Pullfather" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A10000000000000000000100 /* Pullfather */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000021 /* Pullfather */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				820D8E2A306D0C3C00D49AAA /* Exceptions for "Pullfather" folder in "Pullfather" target */,
+			);
 			path = Pullfather;
 			sourceTree = "<group>";
 		};
@@ -299,6 +312,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pullfather/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -327,6 +341,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Pullfather/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
