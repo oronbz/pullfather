@@ -8,6 +8,7 @@ nonisolated final class FakeGitHub: Sendable {
         var isGateOpen: Bool
         var scriptedFailure: GitHubFailure?
         var response: Data?
+        var lastVariables: [String: GraphQLVariable] = [:]
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
 
@@ -23,6 +24,10 @@ nonisolated final class FakeGitHub: Sendable {
 
     var requestCount: Int {
         state.withLock { $0.requestCount }
+    }
+
+    var lastVariables: [String: GraphQLVariable] {
+        state.withLock { $0.lastVariables }
     }
 
     func fail(with failure: GitHubFailure?) {
@@ -48,7 +53,8 @@ nonisolated final class FakeGitHub: Sendable {
         Transport(github: self, token: token)
     }
 
-    fileprivate func send(token: String) async throws(GitHubFailure) -> Data {
+    fileprivate func send(token: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
+        state.withLock { $0.lastVariables = variables }
         guard let login = viewers[token] else { throw failure }
         await passGate()
         let (scriptedFailure, response) = state.withLock { ($0.scriptedFailure, $0.response) }
@@ -78,7 +84,7 @@ nonisolated final class FakeGitHub: Sendable {
         let token: String
 
         func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
-            try await github.send(token: token)
+            try await github.send(token: token, variables: variables)
         }
     }
 }

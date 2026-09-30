@@ -63,7 +63,7 @@ nonisolated struct SyncResult: Equatable, Sendable {
 
 nonisolated enum SyncQuery {
     static let text = """
-        query Sync($business: String!, $family: String!) {
+        query Sync($business: String!, $authored: String!, $assigned: String!) {
           viewer { login }
           business: search(query: $business, type: ISSUE, first: 100) {
             nodes {
@@ -83,7 +83,12 @@ nonisolated enum SyncQuery {
               }
             }
           }
-          family: search(query: $family, type: ISSUE, first: 100) {
+          authored: search(query: $authored, type: ISSUE, first: 100) {
+            nodes {
+              ...PullRequestFields
+            }
+          }
+          assigned: search(query: $assigned, type: ISSUE, first: 100) {
             nodes {
               ...PullRequestFields
             }
@@ -116,17 +121,21 @@ nonisolated enum SyncQuery {
 
     static let variables: [String: GraphQLVariable] = [
         "business": "is:open is:pr archived:false -is:draft review-requested:@me",
-        "family": "is:open is:pr archived:false author:@me",
+        "authored": "is:open is:pr archived:false author:@me",
+        "assigned": "is:open is:pr archived:false assignee:@me",
     ]
 
     static func decode(_ data: Data) throws -> SyncResult {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let payload = try decoder.decode(Response.self, from: data).data
+        var seenIDs = Set<String>()
         return SyncResult(
             viewer: payload.viewer.login,
             business: payload.business.nodes.compactMap(\.pullRequest),
-            family: payload.family.nodes.compactMap(\.pullRequest)
+            family: (payload.authored.nodes + payload.assigned.nodes)
+                .compactMap(\.pullRequest)
+                .filter { seenIDs.insert($0.id).inserted }
         )
     }
 
@@ -134,7 +143,8 @@ nonisolated enum SyncQuery {
         struct Payload: Decodable {
             let viewer: Viewer
             let business: Search
-            let family: Search
+            let authored: Search
+            let assigned: Search
         }
 
         struct Viewer: Decodable {
