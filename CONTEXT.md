@@ -1,6 +1,6 @@
 # The Pullfather
 
-A macOS menu bar app that shows the GitHub pull requests waiting on you and the ones you opened, kept fresh enough to trust at a glance.
+A macOS menu bar app that shows the GitHub pull requests waiting on you and the ones you opened or are assigned to, kept fresh enough to trust at a glance.
 
 ## Language
 
@@ -11,8 +11,8 @@ Open, non-draft pull requests where your review is requested, either by name or 
 _Avoid_: Review queue, inbox, to-review, review requests (as a section name)
 
 **Family**:
-Open pull requests you authored, drafts included.
-_Avoid_: Assigned, mine, my PRs
+Open pull requests you authored or are assigned to, drafts included.
+_Avoid_: Assigned, mine, my PRs (as section names)
 
 **Count**:
 The number shown next to the menu bar glyph: the size of Business by default, or of Family, or nothing, as the user chooses. Hidden when zero.

@@ -185,10 +185,69 @@ final class SyncStoreTests {
         let draft = SyncFixture.PullRequest(number: 7, createdAt: ago(hours: 1), isDraft: true)
         let ready = SyncFixture.PullRequest(number: 8, createdAt: ago(hours: 2))
 
-        let store = try await sync(SyncFixture(business: [draft, ready], family: [draft, ready]).data)
+        let store = try await sync(SyncFixture(business: [draft, ready], authored: [draft, ready]).data)
 
         #expect(store.business?.map(\.number) == [8])
         #expect(store.family?.map(\.number) == [7, 8])
+    }
+
+    @Test func syncAsksGitHubForPullRequestsIAuthoredAndPullRequestsAssignedToMe() async throws {
+        let github = makeGitHub(SyncFixture().data)
+        let store = try makeStore(github)
+
+        await store.requestSync().value
+
+        let searches = Array(github.lastVariables.values)
+        #expect(searches.contains("is:open is:pr archived:false author:@me"))
+        #expect(searches.contains("is:open is:pr archived:false assignee:@me"))
+    }
+
+    @Test func familyIncludesPullRequestsAssignedToMe() async throws {
+        let assigned = SyncFixture.PullRequest(number: 5, author: "sonny", createdAt: ago(hours: 1))
+
+        let store = try await sync(SyncFixture(assigned: [assigned]).data)
+
+        #expect(store.family?.map(\.number) == [5])
+    }
+
+    @Test func aPullRequestIAuthoredAndAmAssignedToIsInFamilyOnce() async throws {
+        let authoredAndAssigned = SyncFixture.PullRequest(number: 5, author: "tomhagen", createdAt: ago(hours: 1))
+
+        let store = try await sync(SyncFixture(authored: [authoredAndAssigned], assigned: [authoredAndAssigned]).data)
+
+        #expect(store.family?.map(\.number) == [5])
+    }
+
+    @Test func assignedPullRequestsJoinFamilyByMostRecentActivityDraftsIncluded() async throws {
+        let older = SyncFixture.PullRequest(number: 1, author: "tomhagen", createdAt: ago(days: 2), updatedAt: ago(hours: 3))
+        let assignedDraft = SyncFixture.PullRequest(number: 2, author: "sonny", createdAt: ago(days: 1), updatedAt: ago(hours: 1), isDraft: true)
+        let newer = SyncFixture.PullRequest(number: 3, author: "tomhagen", createdAt: ago(days: 1), updatedAt: ago(hours: 2))
+
+        let store = try await sync(SyncFixture(business: [assignedDraft], authored: [older, newer], assigned: [assignedDraft]).data)
+
+        #expect(store.business == [])
+        #expect(store.family?.map(\.number) == [2, 3, 1])
+        #expect(store.family?.map(\.isDraft) == [true, false, false])
+    }
+
+    @Test func theFamilyCountIncludesAssignedPullRequestsOnce() async throws {
+        preferences.countMode = .family
+
+        let store = try await sync(SyncFixture(
+            authored: [.init(number: 1, createdAt: ago(hours: 1)), .init(number: 2, createdAt: ago(hours: 2))],
+            assigned: [.init(number: 2, createdAt: ago(hours: 2)), .init(number: 3, createdAt: ago(hours: 3))]
+        ).data)
+
+        #expect(store.countText == "3")
+    }
+
+    @Test func anAssignedPullRequestAskingForMyReviewIsInBusinessAndFamily() async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 4, createdAt: ago(hours: 1), requests: [.user("tomhagen", at: ago(hours: 1))])
+
+        let store = try await sync(SyncFixture(business: [pullRequest], assigned: [pullRequest]).data)
+
+        #expect(store.business?.map(\.number) == [4])
+        #expect(store.family?.map(\.number) == [4])
     }
 
     @Test(arguments: [
@@ -200,7 +259,7 @@ final class SyncStoreTests {
     func familyRowsShowTheirReviewState(reviewDecision: String?, expected: ReviewState?) async throws {
         let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), reviewDecision: reviewDecision)
 
-        let store = try await sync(SyncFixture(family: [pullRequest]).data)
+        let store = try await sync(SyncFixture(authored: [pullRequest]).data)
 
         #expect(store.family?.first?.reviewState == expected)
     }
@@ -215,7 +274,7 @@ final class SyncStoreTests {
     func rowsShowTheirChecks(rollupState: String, expected: Checks) async throws {
         let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), rollupState: rollupState)
 
-        let store = try await sync(SyncFixture(business: [pullRequest], family: [pullRequest]).data)
+        let store = try await sync(SyncFixture(business: [pullRequest], authored: [pullRequest]).data)
 
         #expect(store.business?.first?.checks == expected)
         #expect(store.family?.first?.checks == expected)
@@ -231,7 +290,7 @@ final class SyncStoreTests {
     @Test func aPullRequestWithoutChecksShowsNone() async throws {
         let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), rollupState: nil)
 
-        let store = try await sync(SyncFixture(business: [pullRequest], family: [pullRequest]).data)
+        let store = try await sync(SyncFixture(business: [pullRequest], authored: [pullRequest]).data)
 
         #expect(store.business?.first?.checks == nil)
         #expect(store.family?.first?.checks == nil)
@@ -251,7 +310,7 @@ final class SyncStoreTests {
     func theCountFollowsTheCountMode(mode: CountMode, expected: String?) async throws {
         let store = try await sync(SyncFixture(
             business: [.init(number: 1, createdAt: ago(hours: 1))],
-            family: [.init(number: 2, createdAt: ago(hours: 1)), .init(number: 3, createdAt: ago(hours: 2), isDraft: true)]
+            authored: [.init(number: 2, createdAt: ago(hours: 1)), .init(number: 3, createdAt: ago(hours: 2), isDraft: true)]
         ).data)
 
         preferences.countMode = mode
@@ -653,6 +712,18 @@ final class SyncStoreTests {
         #expect(arrivals.isEmpty)
     }
 
+    @Test func beingAssignedIsNotAnArrival() async throws {
+        let github = makeGitHub(SyncFixture(business: [first]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [first], assigned: [second]).data)
+        await store.requestSync().value
+
+        #expect(store.family?.map(\.number) == [2])
+        #expect(arrivals.isEmpty)
+    }
+
     @Test func pullRequestsLeavingBusinessDoNotArrive() async throws {
         let github = makeGitHub(SyncFixture(business: [first, second]).data)
         let store = try makeStore(github)
@@ -693,7 +764,7 @@ final class SyncStoreTests {
 
     @Test func aPullRequestInBothSectionsIsSelectedOncePerSection() async throws {
         let shared = SyncFixture.PullRequest(number: 5, createdAt: ago(hours: 1))
-        let store = try await sync(SyncFixture(business: [shared], family: [shared]).data)
+        let store = try await sync(SyncFixture(business: [shared], authored: [shared]).data)
 
         store.moveSelection(.down)
         store.moveSelection(.down)

@@ -37,7 +37,7 @@ The app is ad-hoc signed, not notarized. If macOS refuses to open it the first t
 The Pullfather keeps track of two kinds of business, and only two.
 
 - **Business**: pull requests waiting on your review, whether someone asked you by name or asked a team you're on. Longest-waiting first, because nobody likes being kept waiting.
-- **Family**: the pull requests you opened, drafts included, with their review verdict and CI status. Most recent activity first.
+- **Family**: the pull requests you opened or are assigned to, drafts included, with their review verdict and CI status. Most recent activity first.
 
 The number next to the fedora in your menu bar is how many favors are being asked of you.
 

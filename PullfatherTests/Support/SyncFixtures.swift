@@ -71,7 +71,7 @@ nonisolated enum SyncFixtures {
             }
           ]
         },
-        "family": {
+        "authored": {
           "nodes": [
             {
               "id": "PR_kwDOAAAAAc5ddddd",
@@ -113,7 +113,8 @@ nonisolated enum SyncFixtures {
               "commits": { "nodes": [{ "commit": { "statusCheckRollup": null } }] }
             }
           ]
-        }
+        },
+        "assigned": { "nodes": [] }
       }
     }
     """#.utf8)
@@ -140,13 +141,15 @@ nonisolated struct SyncFixture {
 
     var viewer = "tomhagen"
     var business: [PullRequest] = []
-    var family: [PullRequest] = []
+    var authored: [PullRequest] = []
+    var assigned: [PullRequest] = []
 
     var data: Data {
         let response: [String: Any] = ["data": [
             "viewer": ["login": viewer],
             "business": ["nodes": Self.nodes(business)],
-            "family": ["nodes": Self.nodes(family)],
+            "authored": ["nodes": Self.nodes(authored)],
+            "assigned": ["nodes": Self.nodes(assigned)],
         ]]
         return try! JSONSerialization.data(withJSONObject: response)
     }
