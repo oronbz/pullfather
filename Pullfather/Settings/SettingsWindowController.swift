@@ -126,6 +126,15 @@ private struct BusinessPane: View {
                 .tint(Palette.commitRed)
                 .fixedSize()
             }
+            NoirRow {
+                Text("Hide pull requests others already reviewed")
+                Spacer()
+                Toggle("Hide pull requests others already reviewed", isOn: $preferences.hidesCoveredPullRequests)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
+            }
         }
     }
 }

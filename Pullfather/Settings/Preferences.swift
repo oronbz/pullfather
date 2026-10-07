@@ -41,6 +41,7 @@ final class Preferences {
     private static let refreshIntervalKey = "refreshIntervalMinutes"
     private static let notifiesArrivalsKey = "notifiesArrivals"
     private static let themeKey = "theme"
+    private static let hidesCoveredPullRequestsKey = "hidesCoveredPullRequests"
 
     @ObservationIgnored private let defaults: UserDefaults
 
@@ -64,6 +65,10 @@ final class Preferences {
         didSet { defaults.set(theme.rawValue, forKey: Self.themeKey) }
     }
 
+    var hidesCoveredPullRequests: Bool {
+        didSet { defaults.set(hidesCoveredPullRequests, forKey: Self.hidesCoveredPullRequestsKey) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         businessOrder = defaults.string(forKey: Self.businessOrderKey).flatMap(BusinessOrder.init) ?? .newestFirst
@@ -71,6 +76,7 @@ final class Preferences {
         refreshInterval = RefreshInterval(rawValue: defaults.integer(forKey: Self.refreshIntervalKey)) ?? .oneMinute
         notifiesArrivals = defaults.object(forKey: Self.notifiesArrivalsKey) as? Bool ?? true
         theme = defaults.string(forKey: Self.themeKey).flatMap(Theme.init) ?? .noir
+        hidesCoveredPullRequests = defaults.bool(forKey: Self.hidesCoveredPullRequestsKey)
     }
 }
 

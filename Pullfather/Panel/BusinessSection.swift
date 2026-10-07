@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BusinessSection: View {
     let rows: [BusinessRow]?
+    let caption: String?
     let syncedAt: Date?
     let avatars: AvatarCache
     @Binding var selection: PanelRowID?
@@ -10,7 +11,7 @@ struct BusinessSection: View {
     var body: some View {
         PanelSection(
             title: "Business",
-            caption: rows.flatMap { $0.isEmpty ? nil : "\($0.count) awaiting your review" },
+            caption: caption,
             emptyText: "No favors asked. Enjoy the cannoli.",
             rows: rows
         ) { row in
@@ -89,7 +90,7 @@ struct InitialsAvatar: View {
 #if DEBUG
 #Preview("Business") {
     BothAppearances {
-        BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
+        BusinessSection(rows: BusinessRow.previews, caption: "3 awaiting your review · 2 covered", syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)
@@ -98,7 +99,7 @@ struct InitialsAvatar: View {
 
 #Preview("Empty") {
     BothAppearances {
-        BusinessSection(rows: [], syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
+        BusinessSection(rows: [], caption: nil, syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)

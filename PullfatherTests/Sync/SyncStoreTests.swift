@@ -373,6 +373,14 @@ final class SyncStoreTests {
         #expect(!Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).notifiesArrivals)
     }
 
+    @Test func hidingCoveredPullRequestsIsOffByDefaultAndRememberedAcrossLaunches() {
+        #expect(!preferences.hidesCoveredPullRequests)
+
+        preferences.hidesCoveredPullRequests = true
+
+        #expect(Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).hidesCoveredPullRequests)
+    }
+
     @Test func theRefreshIntervalIsOneMinuteByDefaultAndRememberedAcrossLaunches() {
         #expect(preferences.refreshInterval == .oneMinute)
 
@@ -679,6 +687,173 @@ final class SyncStoreTests {
 
     private var first: SyncFixture.PullRequest { SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1)) }
     private var second: SyncFixture.PullRequest { SyncFixture.PullRequest(number: 2, createdAt: ago(hours: 2)) }
+
+    private func covered(
+        _ number: Int,
+        requests: [SyncFixture.Request]? = nil,
+        reviews: [SyncFixture.Review]? = nil
+    ) -> SyncFixture.PullRequest {
+        SyncFixture.PullRequest(
+            number: number,
+            createdAt: ago(days: 1),
+            requests: requests ?? [.user("tomhagen", at: ago(hours: 5))],
+            reviews: reviews ?? [.user("fredo", at: ago(hours: 1))]
+        )
+    }
+
+    @Test func aCoveredPullRequestIsHiddenFromBusiness() async throws {
+        preferences.hidesCoveredPullRequests = true
+
+        let store = try await sync(SyncFixture(business: [covered(1), second]).data)
+
+        #expect(store.business?.map(\.number) == [2])
+    }
+
+    private func isHidden(_ pullRequest: SyncFixture.PullRequest) async throws -> Bool {
+        preferences.hidesCoveredPullRequests = true
+        return try await sync(SyncFixture(business: [pullRequest]).data).business == []
+    }
+
+    @Test(arguments: ["APPROVED", "CHANGES_REQUESTED", "COMMENTED"])
+    func anySubmittedVerdictCovers(state: String) async throws {
+        #expect(try await isHidden(covered(1, reviews: [.user("fredo", state: state, at: ago(hours: 1))])))
+    }
+
+    @Test(arguments: ["DISMISSED", "PENDING"])
+    func aDismissedOrPendingReviewDoesNotCover(state: String) async throws {
+        #expect(try await !isHidden(covered(1, reviews: [.user("fredo", state: state, at: ago(hours: 1))])))
+    }
+
+    @Test func aBotsReviewDoesNotCover() async throws {
+        #expect(try await !isHidden(covered(1, reviews: [.bot("copilot-pull-request-reviewer", at: ago(hours: 1))])))
+    }
+
+    @Test func theAuthorsOwnReviewDoesNotCover() async throws {
+        #expect(try await !isHidden(covered(1, reviews: [.user("sonny", state: "COMMENTED", at: ago(hours: 1))])))
+    }
+
+    @Test func myOwnReviewDoesNotCover() async throws {
+        #expect(try await !isHidden(covered(1, reviews: [.user("tomhagen", state: "COMMENTED", at: ago(hours: 1))])))
+    }
+
+    @Test func aReviewBeforeMyLatestRequestDoesNotCover() async throws {
+        #expect(try await !isHidden(covered(1, requests: [
+            .user("tomhagen", at: ago(hours: 5)),
+            .user("tomhagen", at: ago(minutes: 30)),
+        ])))
+    }
+
+    @Test func aReviewSinceTheTeamRequestCovers() async throws {
+        #expect(try await isHidden(covered(1, requests: [.team("consiglieri", at: ago(hours: 5))])))
+    }
+
+    @Test func aReviewBeforeTheLatestTeamRequestDoesNotCover() async throws {
+        #expect(try await !isHidden(covered(1, requests: [
+            .team("consiglieri", at: ago(hours: 5)),
+            .team("consiglieri", at: ago(minutes: 30)),
+        ])))
+    }
+
+    @Test func coveredPullRequestsStayInBusinessWhenNotHidden() async throws {
+        let store = try await sync(SyncFixture(business: [covered(1), second]).data)
+
+        #expect(store.business?.map(\.number) == [2, 1])
+    }
+
+    @Test func hiddenCoveredPullRequestsDoNotCount() async throws {
+        preferences.hidesCoveredPullRequests = true
+
+        let store = try await sync(SyncFixture(business: [covered(1), second]).data)
+
+        #expect(store.countText == "1")
+    }
+
+    @Test func hidingCoveredPullRequestsUpdatesBusinessAndCountWithoutASync() async throws {
+        let github = makeGitHub(SyncFixture(business: [covered(1), second]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        preferences.hidesCoveredPullRequests = true
+
+        #expect(store.business?.map(\.number) == [2])
+        #expect(store.countText == "1")
+        #expect(github.requestCount == 1)
+    }
+
+    @Test func aHiddenCoveredPullRequestDoesNotArrive() async throws {
+        preferences.hidesCoveredPullRequests = true
+        let github = makeGitHub(SyncFixture(business: [second]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [covered(1), second]).data)
+        await store.requestSync().value
+
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func aHiddenPullRequestThatIsRequestedAgainArrives() async throws {
+        preferences.hidesCoveredPullRequests = true
+        let github = makeGitHub(SyncFixture(business: [covered(1)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [covered(1, requests: [
+            .user("tomhagen", at: ago(hours: 5)),
+            .user("tomhagen", at: ago(minutes: 30)),
+        ])]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_1"]])
+    }
+
+    @Test func showingCoveredPullRequestsAgainDoesNotMakeThemArrive() async throws {
+        preferences.hidesCoveredPullRequests = true
+        let github = makeGitHub(SyncFixture(business: [covered(1)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        preferences.hidesCoveredPullRequests = false
+        await store.requestSync().value
+
+        #expect(store.business?.map(\.number) == [1])
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func theBusinessCaptionSaysHowManyAwaitMyReview() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.businessCaption == "3 awaiting your review")
+    }
+
+    @Test func anEmptyBusinessHasNoCaption() async throws {
+        let store = try await sync(SyncFixture(business: []).data)
+
+        #expect(store.businessCaption == nil)
+    }
+
+    @Test func theBusinessCaptionSaysHowManyCoveredPullRequestsAreHidden() async throws {
+        preferences.hidesCoveredPullRequests = true
+
+        let store = try await sync(SyncFixture(business: [covered(1), covered(3), second]).data)
+
+        #expect(store.businessCaption == "1 awaiting your review · 2 covered")
+    }
+
+    @Test func theBusinessCaptionSaysHowManyAreCoveredWhenAllAreHidden() async throws {
+        preferences.hidesCoveredPullRequests = true
+
+        let store = try await sync(SyncFixture(business: [covered(1)]).data)
+
+        #expect(store.business == [])
+        #expect(store.businessCaption == "1 covered")
+    }
+
+    @Test func theBusinessCaptionIgnoresCoveredPullRequestsThatAreNotHidden() async throws {
+        let store = try await sync(SyncFixture(business: [covered(1), second]).data)
+
+        #expect(store.businessCaption == "2 awaiting your review")
+    }
 
     @Test func pullRequestsNewToBusinessArrive() async throws {
         let github = makeGitHub(SyncFixture(business: [first]).data)

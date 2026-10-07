@@ -24,6 +24,7 @@ struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let waitingSince: Date
     let waitingTime: String
     let checks: Checks?
+    let isCovered: Bool
 
     var metadata: String {
         "\(repository) #\(number) · \(waitingTime)"
@@ -76,11 +77,25 @@ final class SyncStore {
 
     private static let firstRetry = Duration.seconds(15)
 
+    private var businessOldestFirst: [BusinessRow]? {
+        preferences.hidesCoveredPullRequests ? oldestFirst?.filter { !$0.isCovered } : oldestFirst
+    }
+
     var business: [BusinessRow]? {
         switch preferences.businessOrder {
-        case .oldestFirst: oldestFirst
-        case .newestFirst: oldestFirst?.reversed()
+        case .oldestFirst: businessOldestFirst
+        case .newestFirst: businessOldestFirst?.reversed()
         }
+    }
+
+    var businessCaption: String? {
+        guard let oldestFirst, let shown = businessOldestFirst?.count else { return nil }
+        let covered = oldestFirst.count - shown
+        let caption = [
+            shown > 0 ? "\(shown) awaiting your review" : nil,
+            covered > 0 ? "\(covered) covered" : nil,
+        ].compactMap(\.self).joined(separator: " · ")
+        return caption.isEmpty ? nil : caption
     }
 
     private var rows: [(id: PanelRowID, url: URL)] {
@@ -236,7 +251,7 @@ final class SyncStore {
         lastSyncedAt = now
         failure = nil
         consecutiveFailures = 0
-        let previousIDs = syncedViewer == result.viewer ? oldestFirst.map { Set($0.map(\.id)) } : nil
+        let previousIDs = syncedViewer == result.viewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
         syncedViewer = result.viewer
         oldestFirst = result.business
             .filter { !$0.isDraft }
@@ -252,7 +267,8 @@ final class SyncStore {
                     avatarURL: pullRequest.authorAvatarURL,
                     waitingSince: waitingSince,
                     waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
-                    checks: pullRequest.checks
+                    checks: pullRequest.checks,
+                    isCovered: pullRequest.isCovered(viewer: result.viewer)
                 )
             }
             .sorted { ($0.waitingSince, $0.number) < ($1.waitingSince, $1.number) }
@@ -271,7 +287,7 @@ final class SyncStore {
                     checks: pullRequest.checks
                 )
             }
-        if let previousIDs, let arrivals = oldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
+        if let previousIDs, let arrivals = businessOldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
             onArrivals(arrivals)
         }
     }
@@ -281,11 +297,11 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing),
+                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isCovered: false),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running),
+                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isCovered: false),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing),
+                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isCovered: false),
     ]
 }
 
