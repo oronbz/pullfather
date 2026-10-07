@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PanelView: View {
     let store: SyncStore
+    let updates: UpdateChecker
     let avatars: AvatarCache
     let notifications: NotificationAccess
     let actions: PanelActions
@@ -59,7 +60,7 @@ struct PanelView: View {
             }
             VStack(spacing: 0) {
                 Hairline()
-                PanelFooter(actions: actions, failure: store.removalFailure)
+                PanelFooter(actions: actions, failure: store.removalFailure, newerRelease: updates.newerRelease)
             }
             .onGeometryChange(for: CGFloat.self, of: \.size.height) { footerHeight = $0 }
         }
@@ -148,6 +149,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -159,6 +161,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -170,6 +173,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: true),
             actions: .preview
@@ -181,6 +185,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -192,6 +197,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, removalFailure: "Couldn't remove you from #412. Can't reach GitHub."),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -203,6 +209,19 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
+            updates: .preview(),
+            avatars: .preview,
+            notifications: .preview(isOff: false),
+            actions: .preview
+        )
+    }
+}
+
+#Preview("Update available") {
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
+            updates: .preview(newerRelease: Release(version: "0.4.0", url: URL(string: "https://github.com/oronbz/pullfather/releases/tag/v0.4.0")!)),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -214,6 +233,7 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: [], family: []),
+            updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview

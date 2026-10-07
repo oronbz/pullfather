@@ -5,6 +5,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let account = Account(tokenStore: .standard, makeTransport: { URLSessionTransport(token: $0) })
     private let preferences = Preferences()
     private lazy var store = SyncStore(account: account, preferences: preferences)
+    private lazy var updates = UpdateChecker(
+        account: account,
+        runningVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    )
     private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
     private let activation = ActivationHandoff()
@@ -25,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     private var permissionRequests: Task<Void, Never>?
     private var themeUpdates: Task<Void, Never>?
+    private var updateChecks: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.appearance = preferences.theme.appearance
@@ -44,7 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         syncTriggers.start()
-        panelController = PanelController(store: store, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
+        updateChecks = Task { [updates] in await updates.checkDaily() }
+        panelController = PanelController(store: store, updates: updates, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
             copyLink: { url in
                 NSPasteboard.general.clearContents()
@@ -52,6 +58,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             openRepository: { NSWorkspace.shared.open($0) },
             removeMeFromReviewers: { [store] in store.removeMeFromReviewers($0) },
+            copyUpgradeCommand: {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(UpdateChecker.upgradeCommand, forType: .string)
+            },
+            openReleaseNotes: { NSWorkspace.shared.open($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
             openSettings: { [settingsWindow] in settingsWindow.show() },
             openNotificationSettings: { [notifications] in notifications.openSystemSettings() },

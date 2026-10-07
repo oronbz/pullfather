@@ -6,6 +6,8 @@ struct PanelActions {
     var copyLink: (URL) -> Void
     var openRepository: (URL) -> Void
     var removeMeFromReviewers: (String) -> Void
+    var copyUpgradeCommand: () -> Void
+    var openReleaseNotes: (URL) -> Void
     var openGitHub: () -> Void
     var openSettings: () -> Void
     var openNotificationSettings: () -> Void
@@ -18,13 +20,15 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var panel: NoirPanel!
     private var actions: PanelActions!
     private let store: SyncStore
+    private let updates: UpdateChecker
     private let notifications: NotificationAccess
     private var countUpdates: Task<Void, Never>?
     private let activation: ActivationHandoff
     private var isOpen = false
 
-    init(store: SyncStore, avatars: AvatarCache, notifications: NotificationAccess, activation: ActivationHandoff, actions: PanelActions) {
+    init(store: SyncStore, updates: UpdateChecker, avatars: AvatarCache, notifications: NotificationAccess, activation: ActivationHandoff, actions: PanelActions) {
         self.store = store
+        self.updates = updates
         self.notifications = notifications
         self.activation = activation
         super.init()
@@ -33,6 +37,8 @@ final class PanelController: NSObject, NSWindowDelegate {
             copyLink: { [weak self] url in actions.copyLink(url); self?.dismiss() },
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
             removeMeFromReviewers: actions.removeMeFromReviewers,
+            copyUpgradeCommand: actions.copyUpgradeCommand,
+            openReleaseNotes: { [weak self] url in actions.openReleaseNotes(url); self?.close() },
             openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
             openSettings: { [weak self] in actions.openSettings(); self?.close() },
             openNotificationSettings: { [weak self] in actions.openNotificationSettings(); self?.close() },
@@ -40,6 +46,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         )
         hostingView = NSHostingView(rootView: PanelView(
             store: store,
+            updates: updates,
             avatars: avatars,
             notifications: notifications,
             actions: self.actions,
@@ -78,6 +85,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         store.select(nil)
         store.dismissRemovalFailure()
         store.requestSync()
+        updates.checkIfStale()
         Task { [notifications] in await notifications.refresh() }
         activation.activate()
         isOpen = true
@@ -158,6 +166,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 #if DEBUG
 extension PanelActions {
-    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
+    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, copyUpgradeCommand: {}, openReleaseNotes: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
 }
 #endif

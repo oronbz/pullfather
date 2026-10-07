@@ -8,6 +8,7 @@ nonisolated final class FakeGitHub: Sendable {
         var isGateOpen: Bool
         var scriptedFailure: GitHubFailure?
         var response: Data?
+        var readResponse: Data?
         var lastVariables: [String: GraphQLVariable] = [:]
         var writes: [RESTRequest] = []
         var writeFailure: GitHubFailure?
@@ -52,6 +53,10 @@ nonisolated final class FakeGitHub: Sendable {
         state.withLock { $0.response = response }
     }
 
+    func respondToReads(with response: Data) {
+        state.withLock { $0.readResponse = response }
+    }
+
     func release() {
         let waiters = state.withLock { state in
             state.isGateOpen = true
@@ -78,13 +83,22 @@ nonisolated final class FakeGitHub: Sendable {
         return response ?? Data(#"{"data":{"viewer":{"login":"\#(login)"}}}"#.utf8)
     }
 
-    fileprivate func send(token: String, request: RESTRequest) async throws(GitHubFailure) {
+    fileprivate func send(token: String, request: RESTRequest) async throws(GitHubFailure) -> Data {
         guard viewers[token] != nil else { throw failure }
+        guard request.method != "GET" else {
+            await passGate()
+            let (scriptedFailure, readResponse) = state.withLock { ($0.scriptedFailure, $0.readResponse) }
+            if let scriptedFailure {
+                throw scriptedFailure
+            }
+            return readResponse ?? Data("[]".utf8)
+        }
         state.withLock { $0.writes.append(request) }
         await passGate()
         if let writeFailure = state.withLock({ $0.writeFailure }) {
             throw writeFailure
         }
+        return Data()
     }
 
     private func passGate() async {
@@ -110,7 +124,7 @@ nonisolated final class FakeGitHub: Sendable {
             try await github.send(token: token, variables: variables)
         }
 
-        func send(_ request: RESTRequest) async throws(GitHubFailure) {
+        func send(_ request: RESTRequest) async throws(GitHubFailure) -> Data {
             try await github.send(token: token, request: request)
         }
     }

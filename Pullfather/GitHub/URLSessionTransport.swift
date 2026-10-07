@@ -31,18 +31,20 @@ nonisolated struct URLSessionTransport: GitHubTransport {
         }
     }
 
-    func send(_ rest: RESTRequest) async throws(GitHubFailure) {
+    func send(_ rest: RESTRequest) async throws(GitHubFailure) -> Data {
         var request = authorisedRequest(Self.restBase.appending(path: rest.path))
         request.httpMethod = rest.method
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        request.httpBody = try? JSONEncoder().encode(rest.body)
+        if !rest.body.isEmpty {
+            request.httpBody = try? JSONEncoder().encode(rest.body)
+        }
 
         let (data, http) = try await perform(request)
         switch http.statusCode {
         case 200..<300:
-            return
-        case 403 where !Self.isRateLimited(http), 404:
+            return data
+        case 403 where rest.method != "GET" && !Self.isRateLimited(http), 404 where rest.method != "GET":
             throw .other("You don't have access to change its reviewers.")
         default:
             let message = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any])?["message"] as? String

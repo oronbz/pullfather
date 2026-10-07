@@ -43,5 +43,5 @@ A noir fedora with a git branch tucked in the hatband like a feather. The branch
 - Header: mini app icon, "The Pullfather" in Playfair Display 700 at 20pt, tagline in Playfair Display italic at 13pt, refresh button.
 - **BUSINESS**: PRs awaiting your review (avatar, title, repo #number · age, CI status).
 - **FAMILY**: your own PRs (title, repo #number · age, review badge, CI status).
-- Footer: Open GitHub ⌘O, Settings… ⌘,, Quit The Pullfather ⌘Q.
+- Footer: Open GitHub ⌘O, Settings… ⌘,, Quit The Pullfather ⌘Q. When a newer release is out, "Update to x.y.z" ⌘U comes first: clicking it copies the upgrade command, right-clicking offers the release notes.
 - Body text uses the system font (SF Pro) at 13pt, with 11.5pt metadata. Width 384pt, corner radius 12, row radius 7.
