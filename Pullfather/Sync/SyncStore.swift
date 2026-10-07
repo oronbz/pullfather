@@ -88,16 +88,6 @@ final class SyncStore {
         }
     }
 
-    var businessCaption: String? {
-        guard let oldestFirst, let shown = businessOldestFirst?.count else { return nil }
-        let covered = oldestFirst.count - shown
-        let caption = [
-            shown > 0 ? "\(shown) awaiting your review" : nil,
-            covered > 0 ? "\(covered) covered" : nil,
-        ].compactMap(\.self).joined(separator: " · ")
-        return caption.isEmpty ? nil : caption
-    }
-
     private var rows: [(id: PanelRowID, url: URL)] {
         guard !needsSignInAgain else { return [] }
         return (business ?? []).map { (.business($0.id), $0.url) } + (family ?? []).map { (.family($0.id), $0.url) }

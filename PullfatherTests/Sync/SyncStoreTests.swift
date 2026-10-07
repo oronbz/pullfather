@@ -820,41 +820,6 @@ final class SyncStoreTests {
         #expect(arrivals.isEmpty)
     }
 
-    @Test func theBusinessCaptionSaysHowManyAwaitMyReview() async throws {
-        let store = try await sync(SyncFixtures.recorded)
-
-        #expect(store.businessCaption == "3 awaiting your review")
-    }
-
-    @Test func anEmptyBusinessHasNoCaption() async throws {
-        let store = try await sync(SyncFixture(business: []).data)
-
-        #expect(store.businessCaption == nil)
-    }
-
-    @Test func theBusinessCaptionSaysHowManyCoveredPullRequestsAreHidden() async throws {
-        preferences.hidesCoveredPullRequests = true
-
-        let store = try await sync(SyncFixture(business: [covered(1), covered(3), second]).data)
-
-        #expect(store.businessCaption == "1 awaiting your review · 2 covered")
-    }
-
-    @Test func theBusinessCaptionSaysHowManyAreCoveredWhenAllAreHidden() async throws {
-        preferences.hidesCoveredPullRequests = true
-
-        let store = try await sync(SyncFixture(business: [covered(1)]).data)
-
-        #expect(store.business == [])
-        #expect(store.businessCaption == "1 covered")
-    }
-
-    @Test func theBusinessCaptionIgnoresCoveredPullRequestsThatAreNotHidden() async throws {
-        let store = try await sync(SyncFixture(business: [covered(1), second]).data)
-
-        #expect(store.businessCaption == "2 awaiting your review")
-    }
-
     @Test func pullRequestsNewToBusinessArrive() async throws {
         let github = makeGitHub(SyncFixture(business: [first]).data)
         let store = try makeStore(github)

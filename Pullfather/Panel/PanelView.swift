@@ -42,7 +42,7 @@ struct PanelView: View {
                             if notifications.showsPopoverHint {
                                 NotificationsOffRow(open: actions.openNotificationSettings, dismiss: notifications.dismissHint)
                             }
-                            BusinessSection(rows: store.business, caption: store.businessCaption, syncedAt: store.lastSyncedAt, avatars: avatars, selection: selection, actions: actions)
+                            BusinessSection(rows: store.business, syncedAt: store.lastSyncedAt, avatars: avatars, selection: selection, actions: actions)
                             FamilySection(rows: store.family, selection: selection, actions: actions)
                         }
                         .padding(.horizontal, 6)
