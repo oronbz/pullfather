@@ -26,6 +26,17 @@ nonisolated enum GraphQLVariable: Encodable, Equatable, Sendable, ExpressibleByS
     }
 }
 
+nonisolated struct RESTRequest: Equatable, Sendable {
+    let method: String
+    let path: String
+    let body: [String: [String]]
+
+    static func removingRequestedReviewer(_ login: String, repository: String, number: Int) -> RESTRequest {
+        RESTRequest(method: "DELETE", path: "repos/\(repository)/pulls/\(number)/requested_reviewers", body: ["reviewers": [login]])
+    }
+}
+
 nonisolated protocol GitHubTransport: Sendable {
     func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data
+    func send(_ request: RESTRequest) async throws(GitHubFailure)
 }

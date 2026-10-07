@@ -59,12 +59,13 @@ struct PanelRow<Content: View>: View {
     }
 }
 
-struct PullRequestRow<Content: View>: View {
+struct PullRequestRow<Content: View, MenuItems: View>: View {
     let id: PanelRowID
     let pullRequest: any ListedPullRequest
     @Binding var selection: PanelRowID?
     let actions: PanelActions
     @ViewBuilder let content: Content
+    @ViewBuilder let menuItems: MenuItems
 
     var body: some View {
         PanelRow(help: pullRequest.title, isHighlighted: selection == id, onHover: pointerMoved, action: { actions.openPullRequest(pullRequest.url) }) {
@@ -74,6 +75,7 @@ struct PullRequestRow<Content: View>: View {
         .contextMenu {
             Button("Copy link") { actions.copyLink(pullRequest.url) }
             Button("Open repository") { actions.openRepository(pullRequest.repositoryURL) }
+            menuItems
         }
     }
 
@@ -85,6 +87,12 @@ struct PullRequestRow<Content: View>: View {
         } else if selection == id {
             selection = nil
         }
+    }
+}
+
+extension PullRequestRow where MenuItems == EmptyView {
+    init(id: PanelRowID, pullRequest: any ListedPullRequest, selection: Binding<PanelRowID?>, actions: PanelActions, @ViewBuilder content: () -> Content) {
+        self.init(id: id, pullRequest: pullRequest, selection: selection, actions: actions, content: content, menuItems: { EmptyView() })
     }
 }
 

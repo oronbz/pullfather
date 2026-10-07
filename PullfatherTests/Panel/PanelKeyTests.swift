@@ -38,4 +38,13 @@ struct PanelKeyTests {
     @Test func otherKeysAreLeftAlone() {
         #expect(PanelKey.command(keyCode: 0, characters: "a", modifiers: []) == nil)
     }
+
+    @Test func commandDeleteRemovesMeFromReviewers() {
+        #expect(PanelKey.command(keyCode: 51, characters: "\u{7F}", modifiers: .command) == .removeMeFromReviewers)
+    }
+
+    @Test(arguments: [NSEvent.ModifierFlags(), .option, [.command, .shift]])
+    func deleteWithoutJustCommandIsLeftAlone(modifiers: NSEvent.ModifierFlags) {
+        #expect(PanelKey.command(keyCode: 51, characters: "\u{7F}", modifiers: modifiers) == nil)
+    }
 }

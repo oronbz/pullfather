@@ -5,6 +5,7 @@ struct PanelActions {
     var openPullRequest: (URL) -> Void
     var copyLink: (URL) -> Void
     var openRepository: (URL) -> Void
+    var removeMeFromReviewers: (String) -> Void
     var openGitHub: () -> Void
     var openSettings: () -> Void
     var openNotificationSettings: () -> Void
@@ -31,6 +32,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
             copyLink: { [weak self] url in actions.copyLink(url); self?.dismiss() },
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
+            removeMeFromReviewers: actions.removeMeFromReviewers,
             openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
             openSettings: { [weak self] in actions.openSettings(); self?.close() },
             openNotificationSettings: { [weak self] in actions.openNotificationSettings(); self?.close() },
@@ -74,6 +76,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func open() {
         guard layout() else { return }
         store.select(nil)
+        store.dismissRemovalFailure()
         store.requestSync()
         Task { [notifications] in await notifications.refresh() }
         activation.activate()
@@ -110,6 +113,10 @@ final class PanelController: NSObject, NSWindowDelegate {
         case .open:
             guard let url = store.selectedURL else { return false }
             actions.openPullRequest(url)
+            return true
+        case .removeMeFromReviewers:
+            guard case .business(let id)? = store.selection else { return false }
+            store.removeMeFromReviewers(id)
             return true
         }
     }
@@ -151,6 +158,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 #if DEBUG
 extension PanelActions {
-    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
+    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
 }
 #endif

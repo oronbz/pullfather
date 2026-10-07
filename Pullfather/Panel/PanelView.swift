@@ -59,7 +59,7 @@ struct PanelView: View {
             }
             VStack(spacing: 0) {
                 Hairline()
-                PanelFooter(actions: actions)
+                PanelFooter(actions: actions, failure: store.removalFailure)
             }
             .onGeometryChange(for: CGFloat.self, of: \.size.height) { footerHeight = $0 }
         }
@@ -181,6 +181,17 @@ private struct Hairline: View {
     BothAppearances {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
+            avatars: .preview,
+            notifications: .preview(isOff: false),
+            actions: .preview
+        )
+    }
+}
+
+#Preview("Removal failed") {
+    BothAppearances {
+        PanelView(
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, removalFailure: "Couldn't remove you from #412. Can't reach GitHub."),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview

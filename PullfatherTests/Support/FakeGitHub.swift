@@ -9,6 +9,8 @@ nonisolated final class FakeGitHub: Sendable {
         var scriptedFailure: GitHubFailure?
         var response: Data?
         var lastVariables: [String: GraphQLVariable] = [:]
+        var writes: [RESTRequest] = []
+        var writeFailure: GitHubFailure?
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
 
@@ -28,6 +30,18 @@ nonisolated final class FakeGitHub: Sendable {
 
     var lastVariables: [String: GraphQLVariable] {
         state.withLock { $0.lastVariables }
+    }
+
+    var writes: [RESTRequest] {
+        state.withLock { $0.writes }
+    }
+
+    func failWrites(with failure: GitHubFailure?) {
+        state.withLock { $0.writeFailure = failure }
+    }
+
+    func hold() {
+        state.withLock { $0.isGateOpen = false }
     }
 
     func fail(with failure: GitHubFailure?) {
@@ -64,6 +78,15 @@ nonisolated final class FakeGitHub: Sendable {
         return response ?? Data(#"{"data":{"viewer":{"login":"\#(login)"}}}"#.utf8)
     }
 
+    fileprivate func send(token: String, request: RESTRequest) async throws(GitHubFailure) {
+        guard viewers[token] != nil else { throw failure }
+        state.withLock { $0.writes.append(request) }
+        await passGate()
+        if let writeFailure = state.withLock({ $0.writeFailure }) {
+            throw writeFailure
+        }
+    }
+
     private func passGate() async {
         await withCheckedContinuation { continuation in
             let isOpen = state.withLock { state in
@@ -85,6 +108,10 @@ nonisolated final class FakeGitHub: Sendable {
 
         func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
             try await github.send(token: token, variables: variables)
+        }
+
+        func send(_ request: RESTRequest) async throws(GitHubFailure) {
+            try await github.send(token: token, request: request)
         }
     }
 }

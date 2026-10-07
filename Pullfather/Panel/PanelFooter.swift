@@ -2,9 +2,23 @@ import SwiftUI
 
 struct PanelFooter: View {
     let actions: PanelActions
+    var failure: String?
 
     var body: some View {
         VStack(spacing: 0) {
+            if let failure {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(Palette.amber)
+                    Text(failure)
+                        .foregroundStyle(Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.system(size: 11.5))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+            }
             FooterRow(title: "Open GitHub", key: "o", action: actions.openGitHub)
             FooterRow(title: "Settings…", key: ",", action: actions.openSettings)
             FooterRow(title: "Quit The Pullfather", key: "q", action: actions.quit)

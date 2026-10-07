@@ -51,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
             },
             openRepository: { NSWorkspace.shared.open($0) },
+            removeMeFromReviewers: { [store] in store.removeMeFromReviewers($0) },
             openGitHub: { NSWorkspace.shared.open(URL(string: "https://github.com/pulls/review-requested")!) },
             openSettings: { [settingsWindow] in settingsWindow.show() },
             openNotificationSettings: { [notifications] in notifications.openSystemSettings() },

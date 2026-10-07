@@ -64,6 +64,7 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let reviewState: ReviewState?
     let checks: Checks?
     let reviewRequests: [ReviewRequest]
+    let pendingReviewers: [ReviewRequest.Reviewer]
     let reviews: [Review]
 
     func waitingSince(viewer: String) -> Date {
@@ -108,6 +109,14 @@ nonisolated enum SyncQuery {
                         __typename
                         ... on User { login }
                       }
+                    }
+                  }
+                }
+                reviewRequests(first: 100) {
+                  nodes {
+                    requestedReviewer {
+                      __typename
+                      ... on User { login }
                     }
                   }
                 }
@@ -246,6 +255,14 @@ nonisolated enum SyncQuery {
             let requestedReviewer: RequestedReviewer?
         }
 
+        struct PendingRequests: Decodable {
+            struct Node: Decodable {
+                let requestedReviewer: RequestedReviewer?
+            }
+
+            let nodes: [Node]
+        }
+
         struct Reviews: Decodable {
             let nodes: [ReviewNode]
         }
@@ -294,6 +311,7 @@ nonisolated enum SyncQuery {
         let author: Author?
         let commits: Commits
         let timelineItems: Timeline?
+        let reviewRequests: PendingRequests?
         let reviews: Reviews?
 
         var pullRequest: PullRequest {
@@ -313,6 +331,7 @@ nonisolated enum SyncQuery {
                 reviewRequests: (timelineItems?.nodes ?? []).map {
                     ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
                 },
+                pendingReviewers: (reviewRequests?.nodes ?? []).map { $0.requestedReviewer?.reviewer ?? .other },
                 reviews: (reviews?.nodes ?? []).map(\.review)
             )
         }

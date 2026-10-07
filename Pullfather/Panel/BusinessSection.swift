@@ -21,6 +21,12 @@ struct BusinessSection: View {
                 if let checks = row.checks {
                     ChecksIcon(checks: checks)
                 }
+            } menuItems: {
+                Divider()
+                Button("Remove me from reviewers") { actions.removeMeFromReviewers(row.id) }
+                    .keyboardShortcut(.delete, modifiers: .command)
+                    .disabled(!row.isRequestedByName)
+                    .help(row.isRequestedByName ? "" : "You were requested through a team. GitHub can only remove the whole team.")
             }
         }
     }

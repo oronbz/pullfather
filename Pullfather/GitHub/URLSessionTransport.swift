@@ -2,6 +2,7 @@ import Foundation
 
 nonisolated struct URLSessionTransport: GitHubTransport {
     static let endpoint = URL(string: "https://api.github.com/graphql")!
+    static let restBase = URL(string: "https://api.github.com")!
 
     private static let offlineCodes: Set<URLError.Code> = [
         .notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost,
@@ -12,13 +13,52 @@ nonisolated struct URLSessionTransport: GitHubTransport {
     var session: URLSession = .shared
 
     func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
-        var request = URLRequest(url: Self.endpoint)
+        var request = authorisedRequest(Self.endpoint)
         request.httpMethod = "POST"
+        request.httpBody = try? JSONEncoder().encode(Body(query: query, variables: variables))
+
+        let (data, http) = try await perform(request)
+        let errors = GraphQLErrors(data)
+        switch http.statusCode {
+        case 200..<300 where errors.isRateLimited:
+            throw .rateLimited(resetsAt: Self.resetDate(http))
+        case 200..<300 where !errors.hasData:
+            throw .other(errors.firstMessage ?? "GitHub sent an unexpected response.")
+        case 200..<300:
+            return data
+        default:
+            throw Self.failure(http, message: errors.firstMessage)
+        }
+    }
+
+    func send(_ rest: RESTRequest) async throws(GitHubFailure) {
+        var request = authorisedRequest(Self.restBase.appending(path: rest.path))
+        request.httpMethod = rest.method
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        request.httpBody = try? JSONEncoder().encode(rest.body)
+
+        let (data, http) = try await perform(request)
+        switch http.statusCode {
+        case 200..<300:
+            return
+        case 403 where !Self.isRateLimited(http), 404:
+            throw .other("You don't have access to change its reviewers.")
+        default:
+            let message = ((try? JSONSerialization.jsonObject(with: data)) as? [String: Any])?["message"] as? String
+            throw Self.failure(http, message: message)
+        }
+    }
+
+    private func authorisedRequest(_ url: URL) -> URLRequest {
+        var request = URLRequest(url: url)
         request.setValue("bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Pullfather", forHTTPHeaderField: "User-Agent")
-        request.httpBody = try? JSONEncoder().encode(Body(query: query, variables: variables))
+        return request
+    }
 
+    private func perform(_ request: URLRequest) async throws(GitHubFailure) -> (Data, HTTPURLResponse) {
         let data: Data
         let response: URLResponse
         do {
@@ -28,22 +68,15 @@ nonisolated struct URLSessionTransport: GitHubTransport {
         } catch {
             throw .other(error.localizedDescription)
         }
-
         guard let http = response as? HTTPURLResponse else { throw .other("GitHub sent an unexpected response.") }
-        let errors = GraphQLErrors(data)
+        return (data, http)
+    }
+
+    private static func failure(_ http: HTTPURLResponse, message: String?) -> GitHubFailure {
         switch http.statusCode {
-        case 200..<300 where errors.isRateLimited:
-            throw .rateLimited(resetsAt: Self.resetDate(http))
-        case 200..<300 where !errors.hasData:
-            throw .other(errors.firstMessage ?? "GitHub sent an unexpected response.")
-        case 200..<300:
-            return data
-        case 401:
-            throw .unauthorised
-        case 403 where Self.isRateLimited(http), 429:
-            throw .rateLimited(resetsAt: Self.resetDate(http))
-        default:
-            throw .other(errors.firstMessage ?? "GitHub returned HTTP \(http.statusCode).")
+        case 401: .unauthorised
+        case 403 where isRateLimited(http), 429: .rateLimited(resetsAt: resetDate(http))
+        default: .other(message ?? "GitHub returned HTTP \(http.statusCode).")
         }
     }
 

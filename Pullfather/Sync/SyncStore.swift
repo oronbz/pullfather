@@ -25,6 +25,8 @@ struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let waitingTime: String
     let checks: Checks?
     let isCovered: Bool
+    var isRequestedByName: Bool
+    let isRequestedThroughTeam: Bool
 
     var metadata: String {
         "\(repository) #\(number) · \(waitingTime)"
@@ -67,18 +69,24 @@ final class SyncStore {
     private(set) var lastSyncedAt: Date?
     private var failure: (reason: GitHubFailure, token: String)?
     private var requestedSelection: PanelRowID?
+    private var removingIDs: Set<String> = []
+    private(set) var removalFailure: String?
 
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
     @ObservationIgnored private var inFlight: Task<Void, Never>?
     @ObservationIgnored private var consecutiveFailures = 0
     @ObservationIgnored private var syncedViewer: String?
+    @ObservationIgnored private var removedIDs: Set<String> = []
     @ObservationIgnored var onArrivals: ([BusinessRow]) -> Void = { _ in }
 
     private static let firstRetry = Duration.seconds(15)
 
     private var businessOldestFirst: [BusinessRow]? {
-        preferences.hidesCoveredPullRequests ? oldestFirst?.filter { !$0.isCovered } : oldestFirst
+        oldestFirst?.filter { row in
+            let isLeaving = removingIDs.contains(row.id) && !row.isRequestedThroughTeam
+            return !isLeaving && !(preferences.hidesCoveredPullRequests && row.isCovered)
+        }
     }
 
     var business: [BusinessRow]? {
@@ -115,6 +123,56 @@ final class SyncStore {
         case (let index?, .up): max(index - 1, 0)
         }
         requestedSelection = ids[index]
+    }
+
+    @discardableResult
+    func removeMeFromReviewers(_ id: String) -> Task<Void, Never>? {
+        guard let token = account.token, let viewer = syncedViewer,
+              let row = oldestFirst?.first(where: { $0.id == id }), row.isRequestedByName, !removingIDs.contains(id)
+        else { return nil }
+        let request = RESTRequest.removingRequestedReviewer(viewer, repository: row.repository, number: row.number)
+        if !row.isRequestedThroughTeam {
+            selectNeighbour(of: .business(id))
+        }
+        removingIDs.insert(id)
+        removalFailure = nil
+        return Task {
+            defer { removingIDs.remove(id) }
+            do throws(GitHubFailure) {
+                try await account.makeTransport(token).send(request)
+                oldestFirst = oldestFirst?.compactMap { row in
+                    guard row.id == id else { return row }
+                    guard row.isRequestedThroughTeam else {
+                        removedIDs.insert(id)
+                        return nil
+                    }
+                    var stillRequested = row
+                    stillRequested.isRequestedByName = false
+                    return stillRequested
+                }
+            } catch {
+                removalFailure = "Couldn't remove you from #\(row.number). \(Self.reason(for: error))"
+            }
+        }
+    }
+
+    func dismissRemovalFailure() {
+        removalFailure = nil
+    }
+
+    private func selectNeighbour(of row: PanelRowID) {
+        let ids = rows.map(\.id)
+        guard selection == row, let index = ids.firstIndex(of: row) else { return }
+        requestedSelection = ids.indices.contains(index + 1) ? ids[index + 1] : ids.indices.contains(index - 1) ? ids[index - 1] : nil
+    }
+
+    private static func reason(for failure: GitHubFailure) -> String {
+        switch failure {
+        case .offline: "Can't reach GitHub."
+        case .rateLimited: "GitHub is rate limiting this token."
+        case .unauthorised: "GitHub didn't accept your token."
+        case .other(let reason): reason
+        }
     }
 
     var countText: String? {
@@ -242,9 +300,14 @@ final class SyncStore {
         failure = nil
         consecutiveFailures = 0
         let previousIDs = syncedViewer == result.viewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
+        if syncedViewer != result.viewer {
+            removedIDs = []
+        }
         syncedViewer = result.viewer
+        let stillIndexed = Set(result.business.filter { removedIDs.contains($0.id) && !$0.pendingReviewers.contains(.user(result.viewer)) }.map(\.id))
+        removedIDs = stillIndexed
         oldestFirst = result.business
-            .filter { !$0.isDraft }
+            .filter { !$0.isDraft && !stillIndexed.contains($0.id) }
             .map { pullRequest in
                 let waitingSince = pullRequest.waitingSince(viewer: result.viewer)
                 return BusinessRow(
@@ -258,7 +321,9 @@ final class SyncStore {
                     waitingSince: waitingSince,
                     waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
                     checks: pullRequest.checks,
-                    isCovered: pullRequest.isCovered(viewer: result.viewer)
+                    isCovered: pullRequest.isCovered(viewer: result.viewer),
+                    isRequestedByName: pullRequest.pendingReviewers.contains(.user(result.viewer)),
+                    isRequestedThroughTeam: pullRequest.pendingReviewers.contains(.team)
                 )
             }
             .sorted { ($0.waitingSince, $0.number) < ($1.waitingSince, $1.number) }
@@ -287,11 +352,11 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isCovered: false),
+                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isCovered: false, isRequestedByName: true, isRequestedThroughTeam: false),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isCovered: false),
+                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isCovered: false, isRequestedByName: false, isRequestedThroughTeam: true),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isCovered: false),
+                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isCovered: false, isRequestedByName: true, isRequestedThroughTeam: false),
     ]
 }
 
@@ -309,12 +374,13 @@ extension FamilyRow {
 }
 
 extension SyncStore {
-    static func preview(business: [BusinessRow]?, family: [FamilyRow]?, failure: GitHubFailure? = nil) -> SyncStore {
+    static func preview(business: [BusinessRow]?, family: [FamilyRow]?, failure: GitHubFailure? = nil, removalFailure: String? = nil) -> SyncStore {
         let store = SyncStore(account: .preview(signedIn: true), preferences: .preview)
         store.oldestFirst = business?.reversed()
         store.family = family
         store.lastSyncedAt = .now.addingTimeInterval(-4 * 60)
         store.failure = failure.map { ($0, "ghp_preview") }
+        store.removalFailure = removalFailure
         return store
     }
 }
