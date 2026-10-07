@@ -7,7 +7,7 @@ A macOS menu bar app that shows the GitHub pull requests waiting on you and the 
 ### Sections
 
 **Business**:
-Open, non-draft pull requests where your review is requested, either by name or through a team you belong to.
+Open, non-draft pull requests where your review is requested, either by name or through a team you belong to, leaving out Covered ones if you choose to hide them.
 _Avoid_: Review queue, inbox, to-review, review requests (as a section name)
 
 **Family**:
@@ -21,10 +21,14 @@ _Avoid_: Badge, counter
 ### Review
 
 **Review Request**:
-A pending ask for your review on a pull request. It ends when you submit a review or the author withdraws it.
+A pending ask for your review on a pull request. It ends when you submit a review, the author withdraws it, or you remove yourself from it.
 
 **Team Review Request**:
 A Review Request that reaches you through a team you belong to rather than by name.
+
+**Covered**:
+A Business pull request that another person, neither you nor the author, has reviewed since the most recent Review Request to you or your team. Any submitted verdict counts, dismissed reviews and bots don't. A re-request makes it uncovered again. Covered pull requests can be hidden from Business.
+_Avoid_: Reviewed, handled, taken
 
 **Review State**:
 The overall review verdict on a Family pull request: Approved, Changes requested, or none yet.
