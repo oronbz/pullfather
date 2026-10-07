@@ -8,17 +8,19 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private let notifications: NotificationAccess
     private let launchAtLogin: LaunchAtLogin
     private let activation: ActivationHandoff
+    private let version: String
 
-    init(account: Account, preferences: Preferences, notifications: NotificationAccess, launchAtLogin: LaunchAtLogin, activation: ActivationHandoff) {
+    init(account: Account, preferences: Preferences, notifications: NotificationAccess, launchAtLogin: LaunchAtLogin, activation: ActivationHandoff, version: String) {
         self.account = account
         self.preferences = preferences
         self.notifications = notifications
         self.launchAtLogin = launchAtLogin
         self.activation = activation
+        self.version = version
     }
 
     private lazy var window: NSWindow = {
-        let controller = NSHostingController(rootView: SettingsView(account: account, preferences: preferences, notifications: notifications, launchAtLogin: launchAtLogin))
+        let controller = NSHostingController(rootView: SettingsView(account: account, preferences: preferences, notifications: notifications, launchAtLogin: launchAtLogin, version: version))
         controller.sizingOptions = .preferredContentSize
         let window = NSWindow(contentViewController: controller)
         window.title = "Settings"
@@ -52,6 +54,7 @@ struct SettingsView: View {
     let preferences: Preferences
     let notifications: NotificationAccess
     let launchAtLogin: LaunchAtLogin
+    let version: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -65,7 +68,7 @@ struct SettingsView: View {
             SyncPane(preferences: preferences)
             AppearancePane(preferences: preferences)
             MenuBarPane(preferences: preferences)
-            GeneralPane(launchAtLogin: launchAtLogin)
+            GeneralPane(launchAtLogin: launchAtLogin, version: version)
         }
         .padding(.horizontal, 20)
         .padding(.top, 4)
@@ -238,6 +241,7 @@ private struct MenuBarPane: View {
 
 private struct GeneralPane: View {
     let launchAtLogin: LaunchAtLogin
+    let version: String
 
     var body: some View {
         NoirSection(title: "General") {
@@ -272,6 +276,13 @@ private struct GeneralPane: View {
                     .foregroundStyle(Palette.checksFailing)
                     .padding(.horizontal, 10)
             }
+            NoirRow {
+                Text("Version")
+                Spacer()
+                Text(version)
+                    .foregroundStyle(Palette.textSecondary)
+                    .textSelection(.enabled)
+            }
         }
     }
 }
@@ -279,7 +290,7 @@ private struct GeneralPane: View {
 #if DEBUG
 #Preview("Signed out") {
     BothAppearances {
-        SettingsView(account: .preview(signedIn: false), preferences: .preview, notifications: .preview(isOff: false), launchAtLogin: LaunchAtLogin())
+        SettingsView(account: .preview(signedIn: false), preferences: .preview, notifications: .preview(isOff: false), launchAtLogin: LaunchAtLogin(), version: "0.4.0")
             .frame(minHeight: 370, maxHeight: .infinity, alignment: .top)
             .background(Palette.windowSurface)
     }
@@ -287,7 +298,7 @@ private struct GeneralPane: View {
 
 #Preview("Signed in") {
     BothAppearances {
-        SettingsView(account: .preview(signedIn: true), preferences: .preview, notifications: .preview(isOff: true), launchAtLogin: LaunchAtLogin())
+        SettingsView(account: .preview(signedIn: true), preferences: .preview, notifications: .preview(isOff: true), launchAtLogin: LaunchAtLogin(), version: "0.4.0")
             .fixedSize()
     }
 }

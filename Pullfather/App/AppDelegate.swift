@@ -5,10 +5,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let account = Account(tokenStore: .standard, makeTransport: { URLSessionTransport(token: $0) })
     private let preferences = Preferences()
     private lazy var store = SyncStore(account: account, preferences: preferences)
-    private lazy var updates = UpdateChecker(
-        account: account,
-        runningVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-    )
+    private let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    private lazy var updates = UpdateChecker(account: account, runningVersion: version)
     private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
     private let activation = ActivationHandoff()
@@ -18,7 +16,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         preferences: preferences,
         notifications: notifications,
         launchAtLogin: launchAtLogin,
-        activation: activation
+        activation: activation,
+        version: version
     )
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
