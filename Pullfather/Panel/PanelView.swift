@@ -40,6 +40,9 @@ struct PanelView: View {
                 ScrollViewReader { scroller in
                     ScrollView {
                         VStack(spacing: 16) {
+                            if updates.showsBadge, let release = updates.newerRelease {
+                                UpdateAvailableRow(release: release, actions: actions, dismiss: updates.dismissBadge)
+                            }
                             if notifications.showsPopoverHint {
                                 NotificationsOffRow(open: actions.openNotificationSettings, dismiss: notifications.dismissHint)
                             }
@@ -121,17 +124,64 @@ private struct NotificationsOffRow: View {
                 .frame(width: 16, height: 16)
         }
         .overlay(alignment: .trailing) {
-            Button(action: dismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Palette.textMuted)
-                    .frame(width: 16, height: 16)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .help("Dismiss")
-            .padding(.trailing, 10)
+            DismissButton(action: dismiss)
         }
+    }
+}
+
+private struct UpdateAvailableRow: View {
+    let release: Release
+    let actions: PanelActions
+    let dismiss: () -> Void
+    @State private var isHovered = false
+    @State private var isConfirmingCopy = false
+
+    var body: some View {
+        PanelRow(help: "Copy the upgrade command", isHighlighted: isHovered, onHover: { isHovered = $0 }, action: copy) {
+            Image(systemName: "arrow.up.circle")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Palette.brass)
+                .frame(width: 30, height: 30)
+            RowText(
+                title: "Update to \(release.version)",
+                metadata: isConfirmingCopy ? "Copied, paste in Terminal" : "Copy the brew upgrade command."
+            )
+            Spacer(minLength: 8)
+            Image(systemName: "doc.on.doc")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Palette.textMuted)
+            Color.clear
+                .frame(width: 16, height: 16)
+        }
+        .contextMenu {
+            Button("View release notes") { actions.openReleaseNotes(release.url) }
+        }
+        .overlay(alignment: .trailing) {
+            DismissButton(action: dismiss)
+        }
+        .confirmingCopy($isConfirmingCopy)
+    }
+
+    private func copy() {
+        actions.copyUpgradeCommand()
+        isConfirmingCopy = true
+    }
+}
+
+private struct DismissButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Palette.textMuted)
+                .frame(width: 16, height: 16)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .help("Dismiss")
+        .padding(.trailing, 10)
     }
 }
 

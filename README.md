@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/58638500-6b19-45d8-bdd4-b66b340c8818
 brew install --cask oronbz/tap/pullfather
 ```
 
-To upgrade, run this, or click "Update to x.y.z" in the popover footer when a newer release is out to copy it:
+To upgrade, run this, or click "Update to x.y.z" in the popover when a newer release is out to copy it:
 
 ```sh
 brew update && brew upgrade --cask pullfather

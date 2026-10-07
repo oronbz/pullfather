@@ -44,10 +44,16 @@ private struct UpdateRow: View {
         .contextMenu {
             Button("View release notes") { actions.openReleaseNotes(release.url) }
         }
-        .task(id: isConfirmingCopy) {
-            guard isConfirmingCopy else { return }
+        .confirmingCopy($isConfirmingCopy)
+    }
+}
+
+extension View {
+    func confirmingCopy(_ isConfirming: Binding<Bool>) -> some View {
+        task(id: isConfirming.wrappedValue) {
+            guard isConfirming.wrappedValue else { return }
             try? await Task.sleep(for: .seconds(2))
-            isConfirmingCopy = false
+            isConfirming.wrappedValue = false
         }
     }
 }

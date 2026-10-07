@@ -31,15 +31,23 @@ final class UpdateChecker {
     private static let repository = "oronbz/pullfather"
     private static let staleAfter: TimeInterval = 60 * 60
     private static let dailyInterval = Duration.seconds(24 * 60 * 60)
+    private static let dismissedVersionKey = "dismissedUpdateVersion"
 
     private var latestNewerRelease: Release?
+    private var dismissedVersion: String?
 
     var newerRelease: Release? {
         account.token == nil ? nil : latestNewerRelease
     }
 
+    var showsBadge: Bool {
+        guard let version = newerRelease.flatMap({ Version($0.version) }) else { return false }
+        return dismissedVersion.flatMap(Version.init).map { version > $0 } ?? true
+    }
+
     @ObservationIgnored private let account: Account
     @ObservationIgnored private let runningVersion: String
+    @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
     @ObservationIgnored private var lastCheckedAt: Date?
@@ -48,13 +56,22 @@ final class UpdateChecker {
     init(
         account: Account,
         runningVersion: String,
+        defaults: UserDefaults = .standard,
         now: @escaping () -> Date = Date.init,
         sleep: @escaping (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
     ) {
         self.account = account
         self.runningVersion = runningVersion
+        self.defaults = defaults
+        dismissedVersion = defaults.string(forKey: Self.dismissedVersionKey)
         self.now = now
         self.sleep = sleep
+    }
+
+    func dismissBadge() {
+        guard let newerRelease else { return }
+        dismissedVersion = newerRelease.version
+        defaults.set(newerRelease.version, forKey: Self.dismissedVersionKey)
     }
 
     func checkDaily() async {
@@ -101,7 +118,7 @@ final class UpdateChecker {
 #if DEBUG
 extension UpdateChecker {
     static func preview(newerRelease: Release? = nil) -> UpdateChecker {
-        let checker = UpdateChecker(account: .preview(signedIn: true), runningVersion: "0.3.0")
+        let checker = UpdateChecker(account: .preview(signedIn: true), runningVersion: "0.3.0", defaults: UserDefaults(suiteName: "PullfatherPreview-\(UUID().uuidString)")!)
         checker.latestNewerRelease = newerRelease
         return checker
     }

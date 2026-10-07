@@ -9,9 +9,12 @@ final class UpdateCheckerTests {
     var now = Date(timeIntervalSince1970: 1_790_000_000)
     let sleeper = ManualSleeper()
     var account: Account!
+    let defaultsSuite = "UpdateCheckerTests-\(UUID().uuidString)"
+    lazy var defaults = UserDefaults(suiteName: defaultsSuite)!
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
+        UserDefaults().removePersistentDomain(forName: defaultsSuite)
     }
 
     private func makeChecker(runningVersion: String = "0.3.0", signedIn: Bool = true) throws -> UpdateChecker {
@@ -19,7 +22,7 @@ final class UpdateCheckerTests {
             try tokenStore.save("ghp_consigliere")
         }
         account = Account(tokenStore: tokenStore, makeTransport: github.transport(token:))
-        return UpdateChecker(account: account, runningVersion: runningVersion, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
+        return UpdateChecker(account: account, runningVersion: runningVersion, defaults: defaults, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
     }
 
     private func publish(_ releases: ReleaseFixture...) {
@@ -174,6 +177,62 @@ final class UpdateCheckerTests {
         #expect(github.requestCount == 2)
         #expect(checker.newerRelease?.version == "0.5.0")
         #expect(sleeper.requests == [.seconds(86_400), .seconds(86_400)])
+    }
+
+    @Test func aNewerReleaseShowsTheBadge() async throws {
+        publish(ReleaseFixture(tag: "v0.4.0"))
+        let checker = try makeChecker()
+
+        await checker.check().value
+
+        #expect(checker.showsBadge)
+    }
+
+    @Test func noNewerReleaseMeansNoBadge() async throws {
+        publish(ReleaseFixture(tag: "v0.3.0"))
+        let checker = try makeChecker()
+
+        await checker.check().value
+
+        #expect(!checker.showsBadge)
+    }
+
+    @Test func dismissingTheBadgeKeepsTheUpdateInTheFooter() async throws {
+        publish(ReleaseFixture(tag: "v0.4.0"))
+        let checker = try makeChecker()
+        await checker.check().value
+
+        checker.dismissBadge()
+
+        #expect(!checker.showsBadge)
+        #expect(checker.newerRelease?.version == "0.4.0")
+    }
+
+    @Test func aDismissedVersionStaysDismissedAcrossLaunches() async throws {
+        publish(ReleaseFixture(tag: "v0.4.0"))
+        try await {
+            let checker = try makeChecker()
+            await checker.check().value
+            checker.dismissBadge()
+        }()
+
+        let relaunched = try makeChecker()
+        await relaunched.check().value
+
+        #expect(!relaunched.showsBadge)
+        #expect(relaunched.newerRelease?.version == "0.4.0")
+    }
+
+    @Test func aReleaseNewerThanTheDismissedOneShowsTheBadgeAgain() async throws {
+        publish(ReleaseFixture(tag: "v0.4.0"))
+        let checker = try makeChecker()
+        await checker.check().value
+        checker.dismissBadge()
+
+        publish(ReleaseFixture(tag: "v0.4.1"))
+        await checker.check().value
+
+        #expect(checker.showsBadge)
     }
 
     @Test func onlyDraftsAndPreReleasesMeanNoUpdate() async throws {
