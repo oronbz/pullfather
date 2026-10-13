@@ -11,25 +11,6 @@ nonisolated struct ReviewRequest: Equatable, Sendable {
     let requestedAt: Date
 }
 
-nonisolated struct Review: Equatable, Sendable {
-    enum Reviewer: Equatable, Sendable {
-        case user(String)
-        case other
-    }
-
-    enum Verdict: String, Equatable, Sendable {
-        case approved = "APPROVED"
-        case changesRequested = "CHANGES_REQUESTED"
-        case commented = "COMMENTED"
-        case dismissed = "DISMISSED"
-        case pending = "PENDING"
-    }
-
-    let reviewer: Reviewer
-    let verdict: Verdict?
-    let submittedAt: Date?
-}
-
 nonisolated enum ReviewState: String, Equatable, Sendable {
     case approved = "APPROVED"
     case changesRequested = "CHANGES_REQUESTED"
@@ -65,21 +46,9 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let checks: Checks?
     let reviewRequests: [ReviewRequest]
     let pendingReviewers: [ReviewRequest.Reviewer]
-    let reviews: [Review]
 
     func waitingSince(viewer: String) -> Date {
         latestRequest(to: .user(viewer)) ?? latestRequest(to: .team) ?? createdAt
-    }
-
-    func isCovered(viewer: String) -> Bool {
-        let since = waitingSince(viewer: viewer)
-        return reviews.contains { review in
-            guard case .user(let login) = review.reviewer, login != viewer, login != author,
-                  let verdict = review.verdict, [.approved, .changesRequested, .commented].contains(verdict),
-                  let submittedAt = review.submittedAt
-            else { return false }
-            return submittedAt > since
-        }
     }
 
     private func latestRequest(to reviewer: ReviewRequest.Reviewer) -> Date? {
@@ -117,16 +86,6 @@ nonisolated enum SyncQuery {
                     requestedReviewer {
                       __typename
                       ... on User { login }
-                    }
-                  }
-                }
-                reviews(last: 50) {
-                  nodes {
-                    state
-                    submittedAt
-                    author {
-                      __typename
-                      login
                     }
                   }
                 }
@@ -263,29 +222,6 @@ nonisolated enum SyncQuery {
             let nodes: [Node]
         }
 
-        struct Reviews: Decodable {
-            let nodes: [ReviewNode]
-        }
-
-        struct ReviewNode: Decodable {
-            struct Author: Decodable {
-                let __typename: String
-                let login: String
-            }
-
-            let state: String
-            let submittedAt: Date?
-            let author: Author?
-
-            var review: Review {
-                let reviewer: Review.Reviewer = switch author {
-                case let author? where author.__typename == "User": .user(author.login)
-                default: .other
-                }
-                return Review(reviewer: reviewer, verdict: Review.Verdict(rawValue: state), submittedAt: submittedAt)
-            }
-        }
-
         struct RequestedReviewer: Decodable {
             let __typename: String
             let login: String?
@@ -312,7 +248,6 @@ nonisolated enum SyncQuery {
         let commits: Commits
         let timelineItems: Timeline?
         let reviewRequests: PendingRequests?
-        let reviews: Reviews?
 
         var pullRequest: PullRequest {
             PullRequest(
@@ -331,8 +266,7 @@ nonisolated enum SyncQuery {
                 reviewRequests: (timelineItems?.nodes ?? []).map {
                     ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
                 },
-                pendingReviewers: (reviewRequests?.nodes ?? []).map { $0.requestedReviewer?.reviewer ?? .other },
-                reviews: (reviews?.nodes ?? []).map(\.review)
+                pendingReviewers: (reviewRequests?.nodes ?? []).map { $0.requestedReviewer?.reviewer ?? .other }
             )
         }
     }

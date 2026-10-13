@@ -24,7 +24,6 @@ struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let waitingSince: Date
     let waitingTime: String
     let checks: Checks?
-    let isCovered: Bool
     var isRequestedByName: Bool
     let isRequestedThroughTeam: Bool
 
@@ -83,10 +82,7 @@ final class SyncStore {
     private static let firstRetry = Duration.seconds(15)
 
     private var businessOldestFirst: [BusinessRow]? {
-        oldestFirst?.filter { row in
-            let isLeaving = removingIDs.contains(row.id) && !row.isRequestedThroughTeam
-            return !isLeaving && !(preferences.hidesCoveredPullRequests && row.isCovered)
-        }
+        oldestFirst?.filter { !removingIDs.contains($0.id) || $0.isRequestedThroughTeam }
     }
 
     var business: [BusinessRow]? {
@@ -321,7 +317,6 @@ final class SyncStore {
                     waitingSince: waitingSince,
                     waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
                     checks: pullRequest.checks,
-                    isCovered: pullRequest.isCovered(viewer: result.viewer),
                     isRequestedByName: pullRequest.pendingReviewers.contains(.user(result.viewer)),
                     isRequestedThroughTeam: pullRequest.pendingReviewers.contains(.team)
                 )
@@ -352,11 +347,11 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isCovered: false, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isRequestedByName: true, isRequestedThroughTeam: false),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isCovered: false, isRequestedByName: false, isRequestedThroughTeam: true),
+                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isRequestedByName: false, isRequestedThroughTeam: true),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isCovered: false, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isRequestedByName: true, isRequestedThroughTeam: false),
     ]
 }
 

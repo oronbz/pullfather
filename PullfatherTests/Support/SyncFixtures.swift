@@ -131,11 +131,6 @@ nonisolated struct SyncFixture {
         case team(String)
     }
 
-    enum Review {
-        case user(String, state: String = "APPROVED", at: Date)
-        case bot(String, at: Date)
-    }
-
     struct PullRequest {
         var number: Int
         var title = "Fix race in token refresh"
@@ -148,7 +143,6 @@ nonisolated struct SyncFixture {
         var rollupState: String?
         var requests: [Request] = []
         var pending: [Reviewer] = []
-        var reviews: [Review] = []
     }
 
     var viewer = "tomhagen"
@@ -194,14 +188,6 @@ nonisolated struct SyncFixture {
                     switch reviewer {
                     case .user(let login): ["requestedReviewer": ["__typename": "User", "login": login]]
                     case .team(let slug): ["requestedReviewer": ["__typename": "Team", "slug": slug]]
-                    }
-                }],
-                "reviews": ["nodes": pullRequest.reviews.map { review -> [String: Any] in
-                    switch review {
-                    case .user(let login, let state, let date):
-                        ["state": state, "submittedAt": formatter.string(from: date), "author": ["__typename": "User", "login": login]]
-                    case .bot(let login, let date):
-                        ["state": "COMMENTED", "submittedAt": formatter.string(from: date), "author": ["__typename": "Bot", "login": login]]
                     }
                 }],
             ]
