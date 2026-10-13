@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BusinessSection: View {
     let rows: [BusinessRow]?
+    let showsChecks: Bool
     let syncedAt: Date?
     let avatars: AvatarCache
     @Binding var selection: PanelRowID?
@@ -18,7 +19,7 @@ struct BusinessSection: View {
                 AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
                 RowText(title: row.title, metadata: row.metadata)
                 Spacer(minLength: 8)
-                if let checks = row.checks {
+                if showsChecks, let checks = row.checks {
                     ChecksIcon(checks: checks)
                 }
             } menuItems: {
@@ -95,7 +96,7 @@ struct InitialsAvatar: View {
 #if DEBUG
 #Preview("Business") {
     BothAppearances {
-        BusinessSection(rows: BusinessRow.previews, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
+        BusinessSection(rows: BusinessRow.previews, showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)
@@ -104,7 +105,7 @@ struct InitialsAvatar: View {
 
 #Preview("Empty") {
     BothAppearances {
-        BusinessSection(rows: [], syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
+        BusinessSection(rows: [], showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)

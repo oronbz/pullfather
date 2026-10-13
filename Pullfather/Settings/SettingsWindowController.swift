@@ -64,6 +64,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 10)
             AccountPane(account: account)
             BusinessPane(preferences: preferences)
+            FamilyPane(preferences: preferences)
             NotificationsPane(preferences: preferences, notifications: notifications)
             SyncPane(preferences: preferences)
             AppearancePane(preferences: preferences)
@@ -128,6 +129,33 @@ private struct BusinessPane: View {
                 .controlSize(.small)
                 .tint(Palette.commitRed)
                 .fixedSize()
+            }
+            NoirRow {
+                Text("Show Checks")
+                Spacer()
+                Toggle("Show Checks", isOn: $preferences.showsBusinessChecks)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
+            }
+        }
+    }
+}
+
+private struct FamilyPane: View {
+    @Bindable var preferences: Preferences
+
+    var body: some View {
+        NoirSection(title: "Family") {
+            NoirRow {
+                Text("Show Checks")
+                Spacer()
+                Toggle("Show Checks", isOn: $preferences.showsFamilyChecks)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
             }
         }
     }

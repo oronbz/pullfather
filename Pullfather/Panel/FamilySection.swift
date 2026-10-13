@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FamilySection: View {
     let rows: [FamilyRow]?
+    let showsChecks: Bool
     @Binding var selection: PanelRowID?
     let actions: PanelActions
 
@@ -20,7 +21,7 @@ struct FamilySection: View {
                 } else if let reviewState = row.reviewState {
                     ReviewBadge(reviewState: reviewState)
                 }
-                if let checks = row.checks {
+                if showsChecks, let checks = row.checks {
                     ChecksIcon(checks: checks)
                 }
             }
@@ -56,7 +57,7 @@ extension ReviewBadge {
 #if DEBUG
 #Preview("Family") {
     BothAppearances {
-        FamilySection(rows: FamilyRow.previews, selection: .constant(.family("5")), actions: .preview)
+        FamilySection(rows: FamilyRow.previews, showsChecks: true, selection: .constant(.family("5")), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)
@@ -65,7 +66,7 @@ extension ReviewBadge {
 
 #Preview("Empty") {
     BothAppearances {
-        FamilySection(rows: [], selection: .constant(nil), actions: .preview)
+        FamilySection(rows: [], showsChecks: true, selection: .constant(nil), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)
