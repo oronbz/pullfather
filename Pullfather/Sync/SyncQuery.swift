@@ -37,6 +37,7 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let title: String
     let url: URL
     let repository: String
+    let branch: String
     let author: String
     let authorAvatarURL: URL?
     let createdAt: Date
@@ -113,6 +114,7 @@ nonisolated enum SyncQuery {
           updatedAt
           isDraft
           reviewDecision
+          headRefName
           repository { nameWithOwner }
           author {
             login
@@ -243,6 +245,7 @@ nonisolated enum SyncQuery {
         let updatedAt: Date
         let isDraft: Bool
         let reviewDecision: String?
+        let headRefName: String
         let repository: Repository
         let author: Author?
         let commits: Commits
@@ -256,6 +259,7 @@ nonisolated enum SyncQuery {
                 title: title,
                 url: url,
                 repository: repository.nameWithOwner,
+                branch: headRefName,
                 author: author?.login ?? "ghost",
                 authorAvatarURL: author?.avatarUrl,
                 createdAt: createdAt,

@@ -296,6 +296,13 @@ final class SyncStoreTests {
         #expect(store.family?.first?.checks == nil)
     }
 
+    @Test func rowsKnowTheirBranchName() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.business?.map(\.branch) == ["fix/token-refresh-race", "swiftui-settings", "bump-fastlane"])
+        #expect(store.family?.map(\.branch) == ["olive-oil-import", "push-routing", "offline-banner"])
+    }
+
     @Test func familyRowsFlagDrafts() async throws {
         let store = try await sync(SyncFixtures.recorded)
 

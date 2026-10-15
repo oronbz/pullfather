@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PanelActions {
     var openPullRequest: (URL) -> Void
+    var copyBranchName: (String) -> Void
     var copyLink: (URL) -> Void
     var openRepository: (URL) -> Void
     var removeMeFromReviewers: (String) -> Void
@@ -34,6 +35,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         super.init()
         self.actions = PanelActions(
             openPullRequest: { [weak self] url in actions.openPullRequest(url); self?.close() },
+            copyBranchName: { [weak self] branch in actions.copyBranchName(branch); self?.dismiss() },
             copyLink: { [weak self] url in actions.copyLink(url); self?.dismiss() },
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
             removeMeFromReviewers: actions.removeMeFromReviewers,
@@ -166,6 +168,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 #if DEBUG
 extension PanelActions {
-    static let preview = PanelActions(openPullRequest: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, copyUpgradeCommand: {}, openReleaseNotes: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
+    static let preview = PanelActions(openPullRequest: { _ in }, copyBranchName: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, copyUpgradeCommand: {}, openReleaseNotes: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
 }
 #endif

@@ -73,6 +73,7 @@ struct PullRequestRow<Content: View, MenuItems: View>: View {
         }
         .id(id)
         .contextMenu {
+            Button("Copy branch name") { actions.copyBranchName(pullRequest.branch) }
             Button("Copy link") { actions.copyLink(pullRequest.url) }
             Button("Open repository") { actions.openRepository(pullRequest.repositoryURL) }
             menuItems

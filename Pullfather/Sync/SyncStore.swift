@@ -5,6 +5,7 @@ protocol ListedPullRequest {
     var title: String { get }
     var url: URL { get }
     var repository: String { get }
+    var branch: String { get }
 }
 
 extension ListedPullRequest {
@@ -19,6 +20,7 @@ struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let title: String
     let url: URL
     let repository: String
+    let branch: String
     let author: String
     let avatarURL: URL?
     let waitingSince: Date
@@ -38,6 +40,7 @@ struct FamilyRow: Identifiable, Equatable, ListedPullRequest {
     let title: String
     let url: URL
     let repository: String
+    let branch: String
     let lastActivity: String
     let isDraft: Bool
     let reviewState: ReviewState?
@@ -319,6 +322,7 @@ final class SyncStore {
                     title: pullRequest.title,
                     url: pullRequest.url,
                     repository: pullRequest.repository,
+                    branch: pullRequest.branch,
                     author: pullRequest.author,
                     avatarURL: pullRequest.authorAvatarURL,
                     waitingSince: waitingSince,
@@ -338,6 +342,7 @@ final class SyncStore {
                     title: pullRequest.title,
                     url: pullRequest.url,
                     repository: pullRequest.repository,
+                    branch: pullRequest.branch,
                     lastActivity: RelativeTime.format(pullRequest.updatedAt, relativeTo: now),
                     isDraft: pullRequest.isDraft,
                     reviewState: pullRequest.reviewState,
@@ -354,24 +359,24 @@ final class SyncStore {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/olive-oil", branch: "fix/token-refresh-race", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", checks: .passing, isRequestedByName: true, isRequestedThroughTeam: false),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isRequestedByName: false, isRequestedThroughTeam: true),
+                    repository: "corleone/casino", branch: "swiftui-settings", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", checks: .running, isRequestedByName: false, isRequestedThroughTeam: true),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/casino", branch: "bump-fastlane", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", checks: .failing, isRequestedByName: true, isRequestedThroughTeam: false),
     ]
 }
 
 extension FamilyRow {
     static let previews = [
         FamilyRow(id: "6", number: 97, title: "Sketch the olive oil import pipeline", url: URL(string: "https://github.com/corleone/olive-oil/pull/97")!,
-                  repository: "corleone/olive-oil", lastActivity: "30m", isDraft: true, reviewState: nil, checks: nil),
+                  repository: "corleone/olive-oil", branch: "olive-oil-import", lastActivity: "30m", isDraft: true, reviewState: nil, checks: nil),
         FamilyRow(id: "5", number: 1084, title: "Refactor push routing", url: URL(string: "https://github.com/corleone/casino/pull/1084")!,
-                  repository: "corleone/casino", lastActivity: "1d", isDraft: false, reviewState: .changesRequested, checks: .failing),
+                  repository: "corleone/casino", branch: "push-routing", lastActivity: "1d", isDraft: false, reviewState: .changesRequested, checks: .failing),
         FamilyRow(id: "4", number: 1079, title: "Add offline banner", url: URL(string: "https://github.com/corleone/casino/pull/1079")!,
-                  repository: "corleone/casino", lastActivity: "3d", isDraft: false, reviewState: .approved, checks: .passing),
+                  repository: "corleone/casino", branch: "offline-banner", lastActivity: "3d", isDraft: false, reviewState: .approved, checks: .passing),
         FamilyRow(id: "7", number: 1102, title: "Tidy up the casino ledger", url: URL(string: "https://github.com/corleone/casino/pull/1102")!,
-                  repository: "corleone/casino", lastActivity: "1w", isDraft: false, reviewState: nil, checks: .running),
+                  repository: "corleone/casino", branch: "casino-ledger", lastActivity: "1w", isDraft: false, reviewState: nil, checks: .running),
     ]
 }
 

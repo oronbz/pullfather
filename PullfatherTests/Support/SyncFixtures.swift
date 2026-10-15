@@ -17,6 +17,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-21T09:41:00Z",
               "updatedAt": "2026-09-24T07:41:00Z",
               "isDraft": false,
+              "headRefName": "fix/token-refresh-race",
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/olive-oil" },
               "author": { "login": "mike-corleone", "avatarUrl": "https://avatars.githubusercontent.com/u/1001?s=60&v=4" },
@@ -42,6 +43,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-19T09:41:00Z",
               "updatedAt": "2026-09-24T04:41:00Z",
               "isDraft": false,
+              "headRefName": "swiftui-settings",
               "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "sonny", "avatarUrl": "https://avatars.githubusercontent.com/u/1002?s=60&v=4" },
@@ -63,6 +65,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-23T09:41:00Z",
               "updatedAt": "2026-09-23T09:41:00Z",
               "isDraft": false,
+              "headRefName": "bump-fastlane",
               "reviewDecision": "REVIEW_REQUIRED",
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "luca-brasi", "avatarUrl": "https://avatars.githubusercontent.com/u/1003?s=60&v=4" },
@@ -81,6 +84,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-14T09:41:00Z",
               "updatedAt": "2026-09-21T09:41:00Z",
               "isDraft": false,
+              "headRefName": "offline-banner",
               "reviewDecision": "APPROVED",
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "tomhagen" },
@@ -94,6 +98,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-18T09:41:00Z",
               "updatedAt": "2026-09-23T09:41:00Z",
               "isDraft": false,
+              "headRefName": "push-routing",
               "reviewDecision": "CHANGES_REQUESTED",
               "repository": { "nameWithOwner": "corleone/casino" },
               "author": { "login": "tomhagen" },
@@ -107,6 +112,7 @@ nonisolated enum SyncFixtures {
               "createdAt": "2026-09-24T08:41:00Z",
               "updatedAt": "2026-09-24T09:11:00Z",
               "isDraft": true,
+              "headRefName": "olive-oil-import",
               "reviewDecision": null,
               "repository": { "nameWithOwner": "corleone/olive-oil" },
               "author": { "login": "tomhagen" },
@@ -135,6 +141,7 @@ nonisolated struct SyncFixture {
         var number: Int
         var title = "Fix race in token refresh"
         var repository = "corleone/olive-oil"
+        var branch = "fix/token-refresh-race"
         var author: String? = "sonny"
         var createdAt: Date
         var updatedAt: Date?
@@ -173,6 +180,7 @@ nonisolated struct SyncFixture {
                 "updatedAt": formatter.string(from: pullRequest.updatedAt ?? pullRequest.createdAt),
                 "isDraft": pullRequest.isDraft,
                 "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
+                "headRefName": pullRequest.branch,
                 "repository": ["nameWithOwner": pullRequest.repository],
                 "author": pullRequest.author.map { ["login": $0, "avatarUrl": "https://avatars.githubusercontent.com/\($0)?s=60"] } ?? NSNull(),
                 "commits": ["nodes": [["commit": ["statusCheckRollup": statusCheckRollup]]]],

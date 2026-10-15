@@ -51,6 +51,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateChecks = Task { [updates] in await updates.checkDaily() }
         panelController = PanelController(store: store, updates: updates, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
+            copyBranchName: { branch in
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(branch, forType: .string)
+            },
             copyLink: { url in
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(url.absoluteString, forType: .string)
