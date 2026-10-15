@@ -815,8 +815,21 @@ final class SyncStoreTests {
         await store.removeMeFromReviewers("PR_1")?.value
 
         #expect(github.writes == [.removingRequestedReviewer("tomhagen", repository: "corleone/olive-oil", number: 1)])
+        #expect(github.mutations == [UnsubscribeMutation.variables("PR_1")])
         #expect(store.business?.map(\.id) == ["PR_2"])
         #expect(store.countText == "1")
+    }
+
+    @Test func aFailedUnsubscribeKeepsTheRemovalAndSaysSo() async throws {
+        let github = makeGitHub(SyncFixture(business: [requested(1, [.user("tomhagen")]), requested(2, [.user("tomhagen")])]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        github.failMutations(with: .offline)
+
+        await store.removeMeFromReviewers("PR_1")?.value
+
+        #expect(store.business?.map(\.id) == ["PR_2"])
+        #expect(store.removalFailure == "Removed you from #1, but couldn't mute its notifications. Can't reach GitHub.")
     }
 
     @Test func theRowLeavesBusinessBeforeGitHubAnswers() async throws {
@@ -851,6 +864,7 @@ final class SyncStoreTests {
         #expect(store.business?.map(\.id) == ["PR_1", "PR_2"])
         #expect(store.countText == "2")
         #expect(store.removalFailure == message)
+        #expect(github.mutations.isEmpty)
     }
 
     @Test func aTeamOnlyRequestCannotBeRemoved() async throws {
@@ -876,6 +890,7 @@ final class SyncStoreTests {
         github.release()
         await removal?.value
         #expect(github.writes == [.removingRequestedReviewer("tomhagen", repository: "corleone/olive-oil", number: 1)])
+        #expect(github.mutations == [UnsubscribeMutation.variables("PR_1")])
         #expect(store.business?.map(\.id) == ["PR_1"])
         #expect(store.business?.first?.isRequestedByName == false)
         #expect(store.removeMeFromReviewers("PR_1") == nil)

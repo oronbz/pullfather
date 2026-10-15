@@ -12,6 +12,8 @@ nonisolated final class FakeGitHub: Sendable {
         var lastVariables: [String: GraphQLVariable] = [:]
         var writes: [RESTRequest] = []
         var writeFailure: GitHubFailure?
+        var mutations: [[String: GraphQLVariable]] = []
+        var mutationFailure: GitHubFailure?
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
 
@@ -39,6 +41,14 @@ nonisolated final class FakeGitHub: Sendable {
 
     func failWrites(with failure: GitHubFailure?) {
         state.withLock { $0.writeFailure = failure }
+    }
+
+    var mutations: [[String: GraphQLVariable]] {
+        state.withLock { $0.mutations }
+    }
+
+    func failMutations(with failure: GitHubFailure?) {
+        state.withLock { $0.mutationFailure = failure }
     }
 
     func hold() {
@@ -72,7 +82,16 @@ nonisolated final class FakeGitHub: Sendable {
         Transport(github: self, token: token)
     }
 
-    fileprivate func send(token: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
+    fileprivate func send(token: String, query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
+        guard !query.hasPrefix("mutation") else {
+            guard viewers[token] != nil else { throw failure }
+            state.withLock { $0.mutations.append(variables) }
+            await passGate()
+            if let mutationFailure = state.withLock({ $0.mutationFailure }) {
+                throw mutationFailure
+            }
+            return Data(#"{"data":{}}"#.utf8)
+        }
         state.withLock { $0.lastVariables = variables }
         guard let login = viewers[token] else { throw failure }
         await passGate()
@@ -121,7 +140,7 @@ nonisolated final class FakeGitHub: Sendable {
         let token: String
 
         func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
-            try await github.send(token: token, variables: variables)
+            try await github.send(token: token, query: query, variables: variables)
         }
 
         func send(_ request: RESTRequest) async throws(GitHubFailure) -> Data {

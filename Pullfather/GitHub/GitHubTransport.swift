@@ -40,6 +40,14 @@ nonisolated struct RESTRequest: Equatable, Sendable {
     }
 }
 
+nonisolated enum UnsubscribeMutation {
+    static let text = "mutation($id: ID!) { updateSubscription(input: {subscribableId: $id, state: UNSUBSCRIBED}) { subscribable { id } } }"
+
+    static func variables(_ id: String) -> [String: GraphQLVariable] {
+        ["id": .string(id)]
+    }
+}
+
 nonisolated protocol GitHubTransport: Sendable {
     func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data
     @discardableResult

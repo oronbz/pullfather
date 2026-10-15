@@ -132,22 +132,29 @@ final class SyncStore {
         }
         removingIDs.insert(id)
         removalFailure = nil
+        let transport = account.makeTransport(token)
         return Task {
             defer { removingIDs.remove(id) }
             do throws(GitHubFailure) {
-                try await account.makeTransport(token).send(request)
-                oldestFirst = oldestFirst?.compactMap { row in
-                    guard row.id == id else { return row }
-                    guard row.isRequestedThroughTeam else {
-                        removedIDs.insert(id)
-                        return nil
-                    }
-                    var stillRequested = row
-                    stillRequested.isRequestedByName = false
-                    return stillRequested
-                }
+                try await transport.send(request)
             } catch {
                 removalFailure = "Couldn't remove you from #\(row.number). \(Self.reason(for: error))"
+                return
+            }
+            oldestFirst = oldestFirst?.compactMap { row in
+                guard row.id == id else { return row }
+                guard row.isRequestedThroughTeam else {
+                    removedIDs.insert(id)
+                    return nil
+                }
+                var stillRequested = row
+                stillRequested.isRequestedByName = false
+                return stillRequested
+            }
+            do throws(GitHubFailure) {
+                _ = try await transport.send(UnsubscribeMutation.text, variables: UnsubscribeMutation.variables(id))
+            } catch {
+                removalFailure = "Removed you from #\(row.number), but couldn't mute its notifications. \(Self.reason(for: error))"
             }
         }
     }
