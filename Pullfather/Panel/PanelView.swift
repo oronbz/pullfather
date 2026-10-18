@@ -46,7 +46,7 @@ struct PanelView: View {
                             if notifications.showsPopoverHint {
                                 NotificationsOffRow(open: actions.openNotificationSettings, dismiss: notifications.dismissHint)
                             }
-                            BusinessSection(rows: store.business, showsChecks: store.preferences.showsBusinessChecks, syncedAt: store.lastSyncedAt, avatars: avatars, selection: selection, actions: actions)
+                            BusinessSection(rows: store.business, showsChecks: store.preferences.showsBusinessChecks, syncedAt: store.lastSyncedAt, avatars: avatars, selection: selection, approvalCandidate: approvalCandidate, actions: actions)
                             FamilySection(rows: store.family, showsChecks: store.preferences.showsFamilyChecks, selection: selection, actions: actions)
                         }
                         .padding(.horizontal, 6)
@@ -63,7 +63,7 @@ struct PanelView: View {
             }
             VStack(spacing: 0) {
                 Hairline()
-                PanelFooter(actions: actions, failure: store.removalFailure, newerRelease: updates.newerRelease)
+                PanelFooter(actions: actions, failure: store.actionFailure, newerRelease: updates.newerRelease)
             }
             .onGeometryChange(for: CGFloat.self, of: \.size.height) { footerHeight = $0 }
         }
@@ -82,6 +82,10 @@ struct PanelView: View {
             pointedRow = row
             store.select(row)
         })
+    }
+
+    private var approvalCandidate: Binding<String?> {
+        Binding(get: { store.approvalCandidate }, set: { store.approvalCandidate = $0 })
     }
 }
 
@@ -246,7 +250,7 @@ private struct Hairline: View {
 #Preview("Removal failed") {
     BothAppearances {
         PanelView(
-            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, removalFailure: "Couldn't remove you from #412. Can't reach GitHub."),
+            store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, actionFailure: "Couldn't remove you from #412. Can't reach GitHub."),
             updates: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),

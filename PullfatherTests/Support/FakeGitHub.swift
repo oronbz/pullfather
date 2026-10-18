@@ -12,7 +12,7 @@ nonisolated final class FakeGitHub: Sendable {
         var lastVariables: [String: GraphQLVariable] = [:]
         var writes: [RESTRequest] = []
         var writeFailure: GitHubFailure?
-        var mutations: [[String: GraphQLVariable]] = []
+        var mutations: [GraphQLMutation] = []
         var mutationFailure: GitHubFailure?
         var waiters: [CheckedContinuation<Void, Never>] = []
     }
@@ -43,7 +43,7 @@ nonisolated final class FakeGitHub: Sendable {
         state.withLock { $0.writeFailure = failure }
     }
 
-    var mutations: [[String: GraphQLVariable]] {
+    var mutations: [GraphQLMutation] {
         state.withLock { $0.mutations }
     }
 
@@ -85,7 +85,7 @@ nonisolated final class FakeGitHub: Sendable {
     fileprivate func send(token: String, query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data {
         guard !query.hasPrefix("mutation") else {
             guard viewers[token] != nil else { throw failure }
-            state.withLock { $0.mutations.append(variables) }
+            state.withLock { $0.mutations.append(GraphQLMutation(text: query, variables: variables)) }
             await passGate()
             if let mutationFailure = state.withLock({ $0.mutationFailure }) {
                 throw mutationFailure

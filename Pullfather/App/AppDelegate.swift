@@ -61,6 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             openRepository: { NSWorkspace.shared.open($0) },
             removeMeFromReviewers: { [store] in store.removeMeFromReviewers($0) },
+            approve: { [store] in store.approve($0) },
             copyUpgradeCommand: {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(UpdateChecker.upgradeCommand, forType: .string)

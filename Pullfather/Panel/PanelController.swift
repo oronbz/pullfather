@@ -7,6 +7,7 @@ struct PanelActions {
     var copyLink: (URL) -> Void
     var openRepository: (URL) -> Void
     var removeMeFromReviewers: (String) -> Void
+    var approve: (String) -> Void
     var copyUpgradeCommand: () -> Void
     var openReleaseNotes: (URL) -> Void
     var openGitHub: () -> Void
@@ -39,6 +40,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             copyLink: { [weak self] url in actions.copyLink(url); self?.dismiss() },
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
             removeMeFromReviewers: actions.removeMeFromReviewers,
+            approve: actions.approve,
             copyUpgradeCommand: actions.copyUpgradeCommand,
             openReleaseNotes: { [weak self] url in actions.openReleaseNotes(url); self?.close() },
             openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
@@ -85,7 +87,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func open() {
         guard layout() else { return }
         store.select(nil)
-        store.dismissRemovalFailure()
+        store.dismissActionFailure()
+        store.approvalCandidate = nil
         store.requestSync()
         updates.checkIfStale()
         Task { [notifications] in await notifications.refresh() }
@@ -168,6 +171,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
 #if DEBUG
 extension PanelActions {
-    static let preview = PanelActions(openPullRequest: { _ in }, copyBranchName: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, copyUpgradeCommand: {}, openReleaseNotes: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
+    static let preview = PanelActions(openPullRequest: { _ in }, copyBranchName: { _ in }, copyLink: { _ in }, openRepository: { _ in }, removeMeFromReviewers: { _ in }, approve: { _ in }, copyUpgradeCommand: {}, openReleaseNotes: { _ in }, openGitHub: {}, openSettings: {}, openNotificationSettings: {}, quit: {})
 }
 #endif

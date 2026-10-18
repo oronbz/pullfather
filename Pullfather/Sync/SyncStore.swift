@@ -72,7 +72,9 @@ final class SyncStore {
     private var failure: (reason: GitHubFailure, token: String)?
     private var requestedSelection: PanelRowID?
     private var removingIDs: Set<String> = []
-    private(set) var removalFailure: String?
+    private var approvingIDs: Set<String> = []
+    private(set) var actionFailure: String?
+    var approvalCandidate: String?
 
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let sleep: (Duration) async throws -> Void
@@ -85,7 +87,7 @@ final class SyncStore {
     private static let firstRetry = Duration.seconds(15)
 
     private var businessOldestFirst: [BusinessRow]? {
-        oldestFirst?.filter { !removingIDs.contains($0.id) || $0.isRequestedThroughTeam }
+        oldestFirst?.filter { !approvingIDs.contains($0.id) && (!removingIDs.contains($0.id) || $0.isRequestedThroughTeam) }
     }
 
     var business: [BusinessRow]? {
@@ -127,21 +129,21 @@ final class SyncStore {
     @discardableResult
     func removeMeFromReviewers(_ id: String) -> Task<Void, Never>? {
         guard let token = account.token, let viewer = syncedViewer,
-              let row = oldestFirst?.first(where: { $0.id == id }), row.isRequestedByName, !removingIDs.contains(id)
+              let row = oldestFirst?.first(where: { $0.id == id }), row.isRequestedByName, !removingIDs.contains(id), !approvingIDs.contains(id)
         else { return nil }
         let request = RESTRequest.removingRequestedReviewer(viewer, repository: row.repository, number: row.number)
         if !row.isRequestedThroughTeam {
             selectNeighbour(of: .business(id))
         }
         removingIDs.insert(id)
-        removalFailure = nil
+        actionFailure = nil
         let transport = account.makeTransport(token)
         return Task {
             defer { removingIDs.remove(id) }
             do throws(GitHubFailure) {
                 try await transport.send(request)
             } catch {
-                removalFailure = "Couldn't remove you from #\(row.number). \(Self.reason(for: error))"
+                actionFailure = "Couldn't remove you from #\(row.number). \(Self.reason(for: error))"
                 return
             }
             oldestFirst = oldestFirst?.compactMap { row in
@@ -155,15 +157,38 @@ final class SyncStore {
                 return stillRequested
             }
             do throws(GitHubFailure) {
-                _ = try await transport.send(UnsubscribeMutation.text, variables: UnsubscribeMutation.variables(id))
+                try await transport.send(.unsubscribing(from: id))
             } catch {
-                removalFailure = "Removed you from #\(row.number), but couldn't mute its notifications. \(Self.reason(for: error))"
+                actionFailure = "Removed you from #\(row.number), but couldn't mute its notifications. \(Self.reason(for: error))"
             }
         }
     }
 
-    func dismissRemovalFailure() {
-        removalFailure = nil
+    @discardableResult
+    func approve(_ id: String) -> Task<Void, Never>? {
+        guard let token = account.token,
+              let row = oldestFirst?.first(where: { $0.id == id }), !approvingIDs.contains(id), !removingIDs.contains(id)
+        else { return nil }
+        approvalCandidate = nil
+        selectNeighbour(of: .business(id))
+        approvingIDs.insert(id)
+        actionFailure = nil
+        let transport = account.makeTransport(token)
+        return Task {
+            defer { approvingIDs.remove(id) }
+            do throws(GitHubFailure) {
+                try await transport.send(.approving(id))
+            } catch {
+                actionFailure = "Couldn't approve #\(row.number). \(Self.reason(for: error))"
+                return
+            }
+            removedIDs.insert(id)
+            oldestFirst = oldestFirst?.filter { $0.id != id }
+        }
+    }
+
+    func dismissActionFailure() {
+        actionFailure = nil
     }
 
     private func selectNeighbour(of row: PanelRowID) {
@@ -381,13 +406,13 @@ extension FamilyRow {
 }
 
 extension SyncStore {
-    static func preview(business: [BusinessRow]?, family: [FamilyRow]?, failure: GitHubFailure? = nil, removalFailure: String? = nil) -> SyncStore {
+    static func preview(business: [BusinessRow]?, family: [FamilyRow]?, failure: GitHubFailure? = nil, actionFailure: String? = nil) -> SyncStore {
         let store = SyncStore(account: .preview(signedIn: true), preferences: .preview)
         store.oldestFirst = business?.reversed()
         store.family = family
         store.lastSyncedAt = .now.addingTimeInterval(-4 * 60)
         store.failure = failure.map { ($0, "ghp_preview") }
-        store.removalFailure = removalFailure
+        store.actionFailure = actionFailure
         return store
     }
 }

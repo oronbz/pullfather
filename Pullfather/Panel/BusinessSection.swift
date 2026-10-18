@@ -6,6 +6,7 @@ struct BusinessSection: View {
     let syncedAt: Date?
     let avatars: AvatarCache
     @Binding var selection: PanelRowID?
+    @Binding var approvalCandidate: String?
     let actions: PanelActions
 
     var body: some View {
@@ -15,21 +16,50 @@ struct BusinessSection: View {
             emptyText: "No favors asked. Enjoy the cannoli.",
             rows: rows
         ) { row in
-            PullRequestRow(id: .business(row.id), pullRequest: row, selection: $selection, actions: actions) {
-                AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
-                RowText(title: row.title, metadata: row.metadata)
-                Spacer(minLength: 8)
-                if showsChecks, let checks = row.checks {
-                    ChecksIcon(checks: checks)
+            if approvalCandidate == row.id {
+                ApprovalConfirmation(row: row, syncedAt: syncedAt, avatars: avatars, approve: { actions.approve(row.id) }, cancel: { approvalCandidate = nil })
+            } else {
+                PullRequestRow(id: .business(row.id), pullRequest: row, selection: $selection, actions: actions) {
+                    AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
+                    RowText(title: row.title, metadata: row.metadata)
+                    Spacer(minLength: 8)
+                    if showsChecks, let checks = row.checks {
+                        ChecksIcon(checks: checks)
+                    }
+                } menuItems: {
+                    Divider()
+                    Button("Approve…") { approvalCandidate = row.id }
+                    Button("Remove me from reviewers") { actions.removeMeFromReviewers(row.id) }
+                        .keyboardShortcut(.delete, modifiers: .command)
+                        .disabled(!row.isRequestedByName)
+                        .help(row.isRequestedByName ? "" : "You were requested through a team. GitHub can only remove the whole team.")
                 }
-            } menuItems: {
-                Divider()
-                Button("Remove me from reviewers") { actions.removeMeFromReviewers(row.id) }
-                    .keyboardShortcut(.delete, modifiers: .command)
-                    .disabled(!row.isRequestedByName)
-                    .help(row.isRequestedByName ? "" : "You were requested through a team. GitHub can only remove the whole team.")
             }
         }
+    }
+}
+
+private struct ApprovalConfirmation: View {
+    let row: BusinessRow
+    let syncedAt: Date?
+    let avatars: AvatarCache
+    let approve: () -> Void
+    let cancel: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
+            RowText(title: "Approve #\(row.number)?", metadata: row.title)
+            Spacer(minLength: 8)
+            Button("Cancel", action: cancel)
+                .buttonStyle(NoirButtonStyle(height: 22))
+            Button("Approve", action: approve)
+                .buttonStyle(NoirButtonStyle(prominent: true, height: 22))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Palette.rowHighlight, in: .rect(cornerRadius: Noir.rowRadius))
+        .id(PanelRowID.business(row.id))
     }
 }
 
@@ -96,7 +126,16 @@ struct InitialsAvatar: View {
 #if DEBUG
 #Preview("Business") {
     BothAppearances {
-        BusinessSection(rows: BusinessRow.previews, showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), actions: .preview)
+        BusinessSection(rows: BusinessRow.previews, showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(.business("2")), approvalCandidate: .constant(nil), actions: .preview)
+            .padding(6)
+            .frame(width: PanelPlacement.width)
+            .background(Palette.surface)
+    }
+}
+
+#Preview("Confirming approval") {
+    BothAppearances {
+        BusinessSection(rows: BusinessRow.previews, showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(nil), approvalCandidate: .constant("2"), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)
@@ -105,7 +144,7 @@ struct InitialsAvatar: View {
 
 #Preview("Empty") {
     BothAppearances {
-        BusinessSection(rows: [], showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(nil), actions: .preview)
+        BusinessSection(rows: [], showsChecks: true, syncedAt: nil, avatars: .preview, selection: .constant(nil), approvalCandidate: .constant(nil), actions: .preview)
             .padding(6)
             .frame(width: PanelPlacement.width)
             .background(Palette.surface)

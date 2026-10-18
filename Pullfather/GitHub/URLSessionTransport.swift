@@ -24,6 +24,12 @@ nonisolated struct URLSessionTransport: GitHubTransport {
             throw .rateLimited(resetsAt: Self.resetDate(http))
         case 200..<300 where !errors.hasData:
             throw .other(errors.firstMessage ?? "GitHub sent an unexpected response.")
+        // A rejected mutation still answers 200 with its payload field set to null under "data".
+        case 200..<300 where query.hasPrefix("mutation"):
+            if let message = errors.firstMessage {
+                throw .other(message)
+            }
+            return data
         case 200..<300:
             return data
         default:

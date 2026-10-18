@@ -40,11 +40,16 @@ nonisolated struct RESTRequest: Equatable, Sendable {
     }
 }
 
-nonisolated enum UnsubscribeMutation {
-    static let text = "mutation($id: ID!) { updateSubscription(input: {subscribableId: $id, state: UNSUBSCRIBED}) { subscribable { id } } }"
+nonisolated struct GraphQLMutation: Equatable, Sendable {
+    let text: String
+    let variables: [String: GraphQLVariable]
 
-    static func variables(_ id: String) -> [String: GraphQLVariable] {
-        ["id": .string(id)]
+    static func unsubscribing(from id: String) -> GraphQLMutation {
+        GraphQLMutation(text: "mutation($id: ID!) { updateSubscription(input: {subscribableId: $id, state: UNSUBSCRIBED}) { subscribable { id } } }", variables: ["id": .string(id)])
+    }
+
+    static func approving(_ id: String) -> GraphQLMutation {
+        GraphQLMutation(text: "mutation($id: ID!) { addPullRequestReview(input: {pullRequestId: $id, event: APPROVE}) { pullRequestReview { id } } }", variables: ["id": .string(id)])
     }
 }
 
@@ -52,4 +57,11 @@ nonisolated protocol GitHubTransport: Sendable {
     func send(_ query: String, variables: [String: GraphQLVariable]) async throws(GitHubFailure) -> Data
     @discardableResult
     func send(_ request: RESTRequest) async throws(GitHubFailure) -> Data
+}
+
+extension GitHubTransport {
+    @discardableResult
+    func send(_ mutation: GraphQLMutation) async throws(GitHubFailure) -> Data {
+        try await send(mutation.text, variables: mutation.variables)
+    }
 }
