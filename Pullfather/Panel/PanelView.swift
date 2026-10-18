@@ -3,6 +3,7 @@ import SwiftUI
 struct PanelView: View {
     let store: SyncStore
     let updates: UpdateChecker
+    let upgrader: Upgrader
     let avatars: AvatarCache
     let notifications: NotificationAccess
     let actions: PanelActions
@@ -41,7 +42,7 @@ struct PanelView: View {
                     ScrollView {
                         VStack(spacing: 16) {
                             if updates.showsBadge, let release = updates.newerRelease {
-                                UpdateAvailableRow(release: release, actions: actions, dismiss: updates.dismissBadge)
+                                UpdateAvailableRow(release: release, upgrader: upgrader, actions: actions, dismiss: updates.dismissBadge)
                             }
                             if notifications.showsPopoverHint {
                                 NotificationsOffRow(open: actions.openNotificationSettings, dismiss: notifications.dismissHint)
@@ -63,7 +64,7 @@ struct PanelView: View {
             }
             VStack(spacing: 0) {
                 Hairline()
-                PanelFooter(actions: actions, failure: store.actionFailure, newerRelease: updates.newerRelease)
+                PanelFooter(actions: actions, failure: store.actionFailure ?? upgrader.failure, newerRelease: updates.newerRelease, upgrader: upgrader)
             }
             .onGeometryChange(for: CGFloat.self, of: \.size.height) { footerHeight = $0 }
         }
@@ -135,40 +136,39 @@ private struct NotificationsOffRow: View {
 
 private struct UpdateAvailableRow: View {
     let release: Release
+    let upgrader: Upgrader
     let actions: PanelActions
     let dismiss: () -> Void
     @State private var isHovered = false
-    @State private var isConfirmingCopy = false
 
     var body: some View {
-        PanelRow(help: "Copy the upgrade command", isHighlighted: isHovered, onHover: { isHovered = $0 }, action: copy) {
+        PanelRow(help: "Upgrade with Homebrew and relaunch", isHighlighted: isHovered, onHover: { isHovered = $0 }, action: { upgrader.upgrade() }) {
             Image(systemName: "arrow.up.circle")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Palette.brass)
                 .frame(width: 30, height: 30)
             RowText(
                 title: "Update to \(release.version)",
-                metadata: isConfirmingCopy ? "Copied, paste in Terminal" : "Copy the brew upgrade command."
+                metadata: upgrader.isUpgrading ? "Updating, back in a moment." : "Upgrade with Homebrew and relaunch."
             )
             Spacer(minLength: 8)
-            Image(systemName: "doc.on.doc")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Palette.textMuted)
+            if upgrader.isUpgrading {
+                ProgressView()
+                    .controlSize(.mini)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Palette.textMuted)
+            }
             Color.clear
                 .frame(width: 16, height: 16)
         }
         .contextMenu {
-            Button("View release notes") { actions.openReleaseNotes(release.url) }
+            UpdateMenu(release: release, actions: actions)
         }
         .overlay(alignment: .trailing) {
             DismissButton(action: dismiss)
         }
-        .confirmingCopy($isConfirmingCopy)
-    }
-
-    private func copy() {
-        actions.copyUpgradeCommand()
-        isConfirmingCopy = true
     }
 }
 
@@ -204,6 +204,7 @@ private struct Hairline: View {
         PanelView(
             store: SyncStore(account: .preview(signedIn: false), preferences: .preview),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -216,6 +217,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -228,6 +230,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: true),
             actions: .preview
@@ -240,6 +243,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .offline),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -252,6 +256,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, actionFailure: "Couldn't remove you from #412. Can't reach GitHub."),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -264,6 +269,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews, failure: .unauthorised),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -276,6 +282,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: BusinessRow.previews, family: FamilyRow.previews),
             updates: .preview(newerRelease: Release(version: "0.4.0", url: URL(string: "https://github.com/oronbz/pullfather/releases/tag/v0.4.0")!)),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview
@@ -288,6 +295,7 @@ private struct Hairline: View {
         PanelView(
             store: .preview(business: [], family: []),
             updates: .preview(),
+            upgrader: .preview(),
             avatars: .preview,
             notifications: .preview(isOff: false),
             actions: .preview

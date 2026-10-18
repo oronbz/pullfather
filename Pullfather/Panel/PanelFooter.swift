@@ -4,6 +4,7 @@ struct PanelFooter: View {
     let actions: PanelActions
     var failure: String?
     var newerRelease: Release?
+    let upgrader: Upgrader
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,7 +22,7 @@ struct PanelFooter: View {
                 .padding(.vertical, 6)
             }
             if let newerRelease {
-                UpdateRow(release: newerRelease, actions: actions)
+                UpdateRow(release: newerRelease, upgrader: upgrader, actions: actions)
             }
             FooterRow(title: "Open GitHub", key: "o", action: actions.openGitHub)
             FooterRow(title: "Settings…", key: ",", action: actions.openSettings)
@@ -33,28 +34,26 @@ struct PanelFooter: View {
 
 private struct UpdateRow: View {
     let release: Release
+    let upgrader: Upgrader
     let actions: PanelActions
-    @State private var isConfirmingCopy = false
 
     var body: some View {
-        FooterRow(title: isConfirmingCopy ? "Copied, paste in Terminal" : "Update to \(release.version)", key: "u") {
-            actions.copyUpgradeCommand()
-            isConfirmingCopy = true
+        FooterRow(title: upgrader.isUpgrading ? "Updating…" : "Update to \(release.version)", key: "u") {
+            upgrader.upgrade()
         }
         .contextMenu {
-            Button("View release notes") { actions.openReleaseNotes(release.url) }
+            UpdateMenu(release: release, actions: actions)
         }
-        .confirmingCopy($isConfirmingCopy)
     }
 }
 
-extension View {
-    func confirmingCopy(_ isConfirming: Binding<Bool>) -> some View {
-        task(id: isConfirming.wrappedValue) {
-            guard isConfirming.wrappedValue else { return }
-            try? await Task.sleep(for: .seconds(2))
-            isConfirming.wrappedValue = false
-        }
+struct UpdateMenu: View {
+    let release: Release
+    let actions: PanelActions
+
+    var body: some View {
+        Button("View release notes") { actions.openReleaseNotes(release.url) }
+        Button("Copy upgrade command") { actions.copyUpgradeCommand() }
     }
 }
 

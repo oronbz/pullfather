@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var store = SyncStore(account: account, preferences: preferences)
     private let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     private lazy var updates = UpdateChecker(account: account, runningVersion: version)
+    private let upgrader = Upgrader(homebrew: .live, quit: { NSApp.terminate(nil) })
     private let avatars = AvatarCache()
     private let launchAtLogin = LaunchAtLogin()
     private let activation = ActivationHandoff()
@@ -49,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         syncTriggers.start()
         updateChecks = Task { [updates] in await updates.checkDaily() }
-        panelController = PanelController(store: store, updates: updates, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
+        panelController = PanelController(store: store, updates: updates, upgrader: upgrader, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },
             copyBranchName: { branch in
                 NSPasteboard.general.clearContents()

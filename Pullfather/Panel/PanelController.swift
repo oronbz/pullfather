@@ -23,14 +23,16 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var actions: PanelActions!
     private let store: SyncStore
     private let updates: UpdateChecker
+    private let upgrader: Upgrader
     private let notifications: NotificationAccess
     private var countUpdates: Task<Void, Never>?
     private let activation: ActivationHandoff
     private var isOpen = false
 
-    init(store: SyncStore, updates: UpdateChecker, avatars: AvatarCache, notifications: NotificationAccess, activation: ActivationHandoff, actions: PanelActions) {
+    init(store: SyncStore, updates: UpdateChecker, upgrader: Upgrader, avatars: AvatarCache, notifications: NotificationAccess, activation: ActivationHandoff, actions: PanelActions) {
         self.store = store
         self.updates = updates
+        self.upgrader = upgrader
         self.notifications = notifications
         self.activation = activation
         super.init()
@@ -41,7 +43,7 @@ final class PanelController: NSObject, NSWindowDelegate {
             openRepository: { [weak self] url in actions.openRepository(url); self?.close() },
             removeMeFromReviewers: actions.removeMeFromReviewers,
             approve: actions.approve,
-            copyUpgradeCommand: actions.copyUpgradeCommand,
+            copyUpgradeCommand: { [weak self] in actions.copyUpgradeCommand(); self?.dismiss() },
             openReleaseNotes: { [weak self] url in actions.openReleaseNotes(url); self?.close() },
             openGitHub: { [weak self] in actions.openGitHub(); self?.close() },
             openSettings: { [weak self] in actions.openSettings(); self?.close() },
@@ -51,6 +53,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         hostingView = NSHostingView(rootView: PanelView(
             store: store,
             updates: updates,
+            upgrader: upgrader,
             avatars: avatars,
             notifications: notifications,
             actions: self.actions,
@@ -88,6 +91,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         guard layout() else { return }
         store.select(nil)
         store.dismissActionFailure()
+        upgrader.dismissFailure()
         store.approvalCandidate = nil
         store.requestSync()
         updates.checkIfStale()
