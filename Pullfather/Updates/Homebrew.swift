@@ -32,8 +32,8 @@ private nonisolated enum HomebrewCLI {
         let brew = try locate()
         try FileManager.default.createDirectory(at: log.deletingLastPathComponent(), withIntermediateDirectories: true)
         // Upgrading only once this process has exited means brew never has to quit the app, which would need Automation access.
-        let script = #"while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; "$2" upgrade --cask "$3" >>"$4" 2>&1; open -b "$5""#
-        try spawnDetached("/bin/sh", ["-c", script, "sh", String(getpid()), brew.path(percentEncoded: false), cask, log.path(percentEncoded: false), Bundle.main.bundleIdentifier ?? ""])
+        let script = #"while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; "$2" upgrade --cask "$3" >>"$4" 2>&1; open "$5""#
+        try spawnDetached("/bin/sh", ["-c", script, "sh", String(getpid()), brew.path(percentEncoded: false), cask, log.path(percentEncoded: false), Bundle.main.bundleURL.path(percentEncoded: false)])
     }
 
     private static var environment: [String: String] {
