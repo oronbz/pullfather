@@ -18,7 +18,8 @@ extension Homebrew {
 }
 
 private nonisolated enum HomebrewCLI {
-    private static let cask = "pullfather"
+    // The full name lets brew load the cask even when it can't find the user's tap trust list, as when XDG_CONFIG_HOME is only set in their shell.
+    private static let cask = "oronbz/tap/pullfather"
     private static let knownDirectories = ["/opt/homebrew/bin", "/usr/local/bin"]
     private static let log = URL.libraryDirectory.appending(path: "Logs/Pullfather/upgrade.log")
 

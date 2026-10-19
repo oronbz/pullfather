@@ -27,7 +27,7 @@ struct Release: Equatable {
 
 @Observable
 final class UpdateChecker {
-    static let upgradeCommand = "brew update && brew upgrade --cask pullfather"
+    static let upgradeCommand = "brew update && brew upgrade --cask oronbz/tap/pullfather"
     private static let repository = "oronbz/pullfather"
     private static let staleAfter: TimeInterval = 60 * 60
     private static let dailyInterval = Duration.seconds(24 * 60 * 60)
