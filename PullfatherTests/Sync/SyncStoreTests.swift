@@ -45,15 +45,30 @@ final class SyncStoreTests {
     @Test func businessShowsTheNewestReviewRequestFirstByDefault() async throws {
         let store = try await sync(SyncFixtures.recorded)
 
-        #expect(store.business?.map(\.metadata) == [
-            "corleone/olive-oil #412 · 2h",
-            "corleone/casino #1088 · 5h",
-            "corleone/casino #1091 · 1d",
+        #expect(store.business?.map { [$0.reference, $0.waitingTime] } == [
+            ["corleone/olive-oil #412", "2h"],
+            ["corleone/casino #1088", "5h"],
+            ["corleone/casino #1091", "1d"],
         ])
         let row = try #require(store.business?.first)
         #expect(row.title == "Fix race in token refresh")
         #expect(row.author == "mike-corleone")
         #expect(row.url == URL(string: "https://github.com/corleone/olive-oil/pull/412"))
+    }
+
+    @Test func rowsShowTheLinesAddedAndRemoved() async throws {
+        let store = try await sync(SyncFixtures.recorded)
+
+        #expect(store.business?.map(\.lineChanges) == [
+            LineChanges(additions: 48, deletions: 12),
+            LineChanges(additions: 1240, deletions: 310),
+            LineChanges(additions: 2, deletions: 2),
+        ])
+        #expect(store.family?.map(\.lineChanges) == [
+            LineChanges(additions: 530, deletions: 0),
+            LineChanges(additions: 214, deletions: 377),
+            LineChanges(additions: 86, deletions: 9),
+        ])
     }
 
     @Test func businessRowsShowTheAuthorsAvatar() async throws {
@@ -171,10 +186,10 @@ final class SyncStoreTests {
     @Test func familyShowsMyPullRequestsWithTheMostRecentActivityFirst() async throws {
         let store = try await sync(SyncFixtures.recorded)
 
-        #expect(store.family?.map(\.metadata) == [
-            "corleone/olive-oil #97 · 30m",
-            "corleone/casino #1084 · 1d",
-            "corleone/casino #1079 · 3d",
+        #expect(store.family?.map { [$0.reference, $0.lastActivity] } == [
+            ["corleone/olive-oil #97", "30m"],
+            ["corleone/casino #1084", "1d"],
+            ["corleone/casino #1079", "3d"],
         ])
         let row = try #require(store.family?.first)
         #expect(row.title == "Sketch the olive oil import pipeline")

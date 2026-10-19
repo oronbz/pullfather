@@ -14,7 +14,7 @@ struct FamilySection: View {
             rows: rows
         ) { row in
             PullRequestRow(id: .family(row.id), pullRequest: row, selection: $selection, actions: actions) {
-                RowText(title: row.title, metadata: row.metadata)
+                RowText(title: row.title, metadata: row.reference, lineChanges: row.lineChanges, time: row.lastActivity)
                 Spacer(minLength: 8)
                 if row.isDraft {
                     ReviewBadge(title: "Draft", color: Palette.textMuted)

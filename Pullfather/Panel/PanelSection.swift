@@ -100,16 +100,36 @@ extension PullRequestRow where MenuItems == EmptyView {
 struct RowText: View {
     let title: String
     let metadata: String
+    var lineChanges: LineChanges?
+    var time: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(title)
                 .font(.system(size: 13))
                 .foregroundStyle(Palette.textPrimary)
-            Text(metadata)
-                .font(.system(size: 11.5))
-                .foregroundStyle(Palette.textSecondary)
+            ViewThatFits(in: .horizontal) {
+                if let lineChanges {
+                    metadataText(lineChanges: lineChanges)
+                        .accessibilityLabel([metadata, "\(lineChanges.additions) lines added, \(lineChanges.deletions) removed", time].compactMap(\.self).joined(separator: ", "))
+                }
+                metadataText(lineChanges: nil)
+            }
+            .font(.system(size: 11.5))
+            .monospacedDigit()
+            .foregroundStyle(Palette.textSecondary)
         }
         .lineLimit(1)
+    }
+
+    private func metadataText(lineChanges: LineChanges?) -> Text {
+        var text = Text(metadata)
+        if let lineChanges {
+            text = Text("\(text) · \(Text(lineChanges.addedText).foregroundStyle(Palette.additions)) \(Text(lineChanges.removedText).foregroundStyle(Palette.deletions))")
+        }
+        if let time {
+            text = Text("\(text) · \(Text(time).foregroundStyle(Palette.textMuted))")
+        }
+        return text
     }
 }

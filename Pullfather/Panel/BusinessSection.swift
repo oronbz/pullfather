@@ -21,7 +21,7 @@ struct BusinessSection: View {
             } else {
                 PullRequestRow(id: .business(row.id), pullRequest: row, selection: $selection, actions: actions) {
                     AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
-                    RowText(title: row.title, metadata: row.metadata)
+                    RowText(title: row.title, metadata: row.reference, lineChanges: row.lineChanges, time: row.waitingTime)
                     Spacer(minLength: 8)
                     if showsChecks, let checks = row.checks {
                         ChecksIcon(checks: checks)

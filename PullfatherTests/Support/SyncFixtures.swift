@@ -16,6 +16,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/olive-oil/pull/412",
               "createdAt": "2026-09-21T09:41:00Z",
               "updatedAt": "2026-09-24T07:41:00Z",
+              "additions": 48,
+              "deletions": 12,
               "isDraft": false,
               "headRefName": "fix/token-refresh-race",
               "reviewDecision": "REVIEW_REQUIRED",
@@ -42,6 +44,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/casino/pull/1088",
               "createdAt": "2026-09-19T09:41:00Z",
               "updatedAt": "2026-09-24T04:41:00Z",
+              "additions": 1240,
+              "deletions": 310,
               "isDraft": false,
               "headRefName": "swiftui-settings",
               "reviewDecision": null,
@@ -64,6 +68,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/casino/pull/1091",
               "createdAt": "2026-09-23T09:41:00Z",
               "updatedAt": "2026-09-23T09:41:00Z",
+              "additions": 2,
+              "deletions": 2,
               "isDraft": false,
               "headRefName": "bump-fastlane",
               "reviewDecision": "REVIEW_REQUIRED",
@@ -83,6 +89,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/casino/pull/1079",
               "createdAt": "2026-09-14T09:41:00Z",
               "updatedAt": "2026-09-21T09:41:00Z",
+              "additions": 86,
+              "deletions": 9,
               "isDraft": false,
               "headRefName": "offline-banner",
               "reviewDecision": "APPROVED",
@@ -97,6 +105,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/casino/pull/1084",
               "createdAt": "2026-09-18T09:41:00Z",
               "updatedAt": "2026-09-23T09:41:00Z",
+              "additions": 214,
+              "deletions": 377,
               "isDraft": false,
               "headRefName": "push-routing",
               "reviewDecision": "CHANGES_REQUESTED",
@@ -111,6 +121,8 @@ nonisolated enum SyncFixtures {
               "url": "https://github.com/corleone/olive-oil/pull/97",
               "createdAt": "2026-09-24T08:41:00Z",
               "updatedAt": "2026-09-24T09:11:00Z",
+              "additions": 530,
+              "deletions": 0,
               "isDraft": true,
               "headRefName": "olive-oil-import",
               "reviewDecision": null,
@@ -146,6 +158,8 @@ nonisolated struct SyncFixture {
         var createdAt: Date
         var updatedAt: Date?
         var isDraft = false
+        var additions = 0
+        var deletions = 0
         var reviewDecision: String?
         var rollupState: String?
         var requests: [Request] = []
@@ -179,6 +193,8 @@ nonisolated struct SyncFixture {
                 "createdAt": formatter.string(from: pullRequest.createdAt),
                 "updatedAt": formatter.string(from: pullRequest.updatedAt ?? pullRequest.createdAt),
                 "isDraft": pullRequest.isDraft,
+                "additions": pullRequest.additions,
+                "deletions": pullRequest.deletions,
                 "reviewDecision": pullRequest.reviewDecision ?? NSNull(),
                 "headRefName": pullRequest.branch,
                 "repository": ["nameWithOwner": pullRequest.repository],

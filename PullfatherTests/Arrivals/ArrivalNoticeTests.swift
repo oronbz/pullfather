@@ -6,7 +6,7 @@ struct ArrivalNoticeTests {
     private func arrival(_ number: Int, author: String, title: String) -> BusinessRow {
         BusinessRow(
             id: "PR_\(number)", number: number, title: title, url: URL(string: "https://github.com/corleone/casino/pull/\(number)")!,
-            repository: "corleone/casino", branch: "swiftui-settings", author: author, avatarURL: nil, waitingSince: .now, waitingTime: "now", checks: nil, isRequestedByName: true, isRequestedThroughTeam: false
+            repository: "corleone/casino", branch: "swiftui-settings", author: author, avatarURL: nil, waitingSince: .now, waitingTime: "now", lineChanges: LineChanges(additions: 2, deletions: 4), checks: nil, isRequestedByName: true, isRequestedThroughTeam: false
         )
     }
 

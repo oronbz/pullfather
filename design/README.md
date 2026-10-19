@@ -37,11 +37,13 @@ A noir fedora with a git branch tucked in the hatband like a feather. The branch
 | Text primary / secondary / muted | `#F2E9DA` / `#B8AB98` / `#9C9083` | Popover text |
 | Checks pass / running / fail | `#4FA464` / `#4F8FD9` / `#D9534A` | Status icons (check / ring / cross) |
 | Amber | `#D9A441` | Changes requested badge, warnings |
+| Additions / deletions | `#4FA464` / `#E0645B` (Bone: `#2B7040` / `#A8322A`) | Line changes on rows |
 
 ## Popover
 
 - Header: mini app icon, "The Pullfather" in Playfair Display 700 at 20pt, tagline in Playfair Display italic at 13pt, refresh button.
-- **BUSINESS**: PRs awaiting your review (avatar, title, repo #number · age, CI status).
-- **FAMILY**: your own PRs (title, repo #number · age, review badge, CI status).
+- **BUSINESS**: PRs awaiting your review (avatar, title, repo #number · +added −removed · age, CI status).
+- **FAMILY**: your own PRs (title, repo #number · +added −removed · age, review badge, CI status).
+- Line changes sit between the number and the age, and the age is in muted text. Line changes are in additions green and deletions red, abbreviated past 999 (`+1.2k`). When the row is too narrow, they drop out rather than truncate the repo and number.
 - Footer: Open GitHub ⌘O, Settings… ⌘,, Quit The Pullfather ⌘Q. When a newer release is out, "Update to x.y.z" ⌘U comes first: clicking it downloads the release with Homebrew, quits, upgrades and relaunches; right-clicking offers the release notes and the upgrade command to copy. The same update also shows as a dismissible row at the top of the list, styled like the notifications hint; dismissing it hides that version for good, until a newer one is published.
 - Body text uses the system font (SF Pro) at 13pt, with 11.5pt metadata. Width 384pt, corner radius 12, row radius 7.

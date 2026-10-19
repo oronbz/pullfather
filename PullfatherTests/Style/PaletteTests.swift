@@ -49,7 +49,7 @@ struct PaletteTests {
         let surface = Palette.windowSurface
         #expect(contrast(Palette.textPrimary, surface, in: scheme) >= 12)
         #expect(contrast(Palette.textSecondary, surface, in: scheme) >= 6.5)
-        for color in [Palette.textMuted, Palette.brass, Palette.amber, Palette.approved] {
+        for color in [Palette.textMuted, Palette.brass, Palette.amber, Palette.approved, Palette.additions, Palette.deletions] {
             #expect(contrast(color, surface, in: scheme) >= 4.5)
         }
     }

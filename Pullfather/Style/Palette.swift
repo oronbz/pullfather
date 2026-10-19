@@ -16,6 +16,8 @@ enum Palette {
     static let amber = Color(dark: 0xD9A441, light: 0x825708)
     static let checksRunning = Color(hex: 0x4F8FD9)
     static let checksFailing = Color(hex: 0xD9534A)
+    static let additions = approved
+    static let deletions = Color(dark: 0xE0645B, light: 0xA8322A)
     static let ink = Color(dark: 0xEDE3D1, light: 0x211B19)
     static let hairline = ink.opacity(0.1)
     static let rowHighlight = ink.opacity(0.06)

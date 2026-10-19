@@ -31,6 +31,22 @@ nonisolated enum Checks: Equatable, Sendable {
     }
 }
 
+nonisolated struct LineChanges: Equatable, Sendable {
+    let additions: Int
+    let deletions: Int
+
+    var addedText: String { "+" + Self.abbreviated(additions) }
+    var removedText: String { "\u{2212}" + Self.abbreviated(deletions) }
+
+    private static func abbreviated(_ count: Int) -> String {
+        switch count {
+        case ..<1000: "\(count)"
+        case ..<10_000 where count / 100 % 10 != 0: "\(count / 1000).\(count / 100 % 10)k"
+        default: "\(count / 1000)k"
+        }
+    }
+}
+
 nonisolated struct PullRequest: Equatable, Sendable {
     let id: String
     let number: Int
@@ -43,6 +59,7 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let createdAt: Date
     let updatedAt: Date
     let isDraft: Bool
+    let lineChanges: LineChanges
     let reviewState: ReviewState?
     let checks: Checks?
     let reviewRequests: [ReviewRequest]
@@ -113,6 +130,8 @@ nonisolated enum SyncQuery {
           createdAt
           updatedAt
           isDraft
+          additions
+          deletions
           reviewDecision
           headRefName
           repository { nameWithOwner }
@@ -244,6 +263,8 @@ nonisolated enum SyncQuery {
         let createdAt: Date
         let updatedAt: Date
         let isDraft: Bool
+        let additions: Int
+        let deletions: Int
         let reviewDecision: String?
         let headRefName: String
         let repository: Repository
@@ -265,6 +286,7 @@ nonisolated enum SyncQuery {
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 isDraft: isDraft,
+                lineChanges: LineChanges(additions: additions, deletions: deletions),
                 reviewState: reviewDecision.flatMap(ReviewState.init),
                 checks: commits.checks,
                 reviewRequests: (timelineItems?.nodes ?? []).map {

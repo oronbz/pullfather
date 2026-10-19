@@ -33,6 +33,10 @@ The overall review verdict on a Family pull request: Approved, Changes requested
 The combined CI result on a pull request's latest commit: passing, running, or failing.
 _Avoid_: Build, CI status, pipeline
 
+**Line Changes**:
+The lines a pull request adds and removes across its whole diff, shown as +added −removed.
+_Avoid_: Diff size, diffstat
+
 ### Time
 
 **Waiting Time**:
