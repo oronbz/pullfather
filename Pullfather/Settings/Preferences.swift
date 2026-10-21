@@ -67,6 +67,10 @@ final class Preferences {
         didSet { defaults.set(notifiesVerdicts, forKey: Self.notifiesVerdictsKey) }
     }
 
+    var notifiesAnything: Bool {
+        notifiesArrivals || notifiesVerdicts
+    }
+
     var theme: Theme {
         didSet { defaults.set(theme.rawValue, forKey: Self.themeKey) }
     }

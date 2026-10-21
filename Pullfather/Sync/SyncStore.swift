@@ -51,6 +51,10 @@ struct FamilyRow: Identifiable, Equatable, ListedPullRequest {
     var reference: String {
         "\(repository) #\(number)"
     }
+
+    func isVerdict(since previous: FamilyRow) -> Bool {
+        reviewState != nil && reviewState != previous.reviewState
+    }
 }
 
 enum PanelRowID: Hashable {
@@ -333,8 +337,9 @@ final class SyncStore {
         lastSyncedAt = now
         failure = nil
         consecutiveFailures = 0
-        let previousIDs = syncedViewer == result.viewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
-        let previousReviewStates = syncedViewer == result.viewer ? family.map { Dictionary(uniqueKeysWithValues: $0.map { ($0.id, $0.reviewState) }) } : nil
+        let sameViewer = syncedViewer == result.viewer
+        let previousIDs = sameViewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
+        let previousFamily = sameViewer ? family.map { Dictionary($0.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }) } : nil
         if syncedViewer != result.viewer {
             removedIDs = []
         }
@@ -383,9 +388,7 @@ final class SyncStore {
         if let previousIDs, let arrivals = businessOldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
             onArrivals(arrivals)
         }
-        if let previousReviewStates, let verdicts = family?.filter({ row in
-            row.reviewState != nil && previousReviewStates[row.id].map { $0 != row.reviewState } == true
-        }), !verdicts.isEmpty {
+        if let previousFamily, let verdicts = family?.filter({ previousFamily[$0.id].map($0.isVerdict(since:)) ?? false }), !verdicts.isEmpty {
             onVerdicts(verdicts)
         }
     }

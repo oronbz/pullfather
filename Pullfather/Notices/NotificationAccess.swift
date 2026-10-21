@@ -32,7 +32,7 @@ final class NotificationAccess {
     }
 
     var showsHint: Bool {
-        (preferences.notifiesArrivals || preferences.notifiesVerdicts) && isOff
+        preferences.notifiesAnything && isOff
     }
 
     var showsPopoverHint: Bool {

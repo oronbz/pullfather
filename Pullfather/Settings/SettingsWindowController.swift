@@ -167,24 +167,8 @@ private struct NotificationsPane: View {
 
     var body: some View {
         NoirSection(title: "Notifications") {
-            NoirRow {
-                Text("Notify when a favor is asked")
-                Spacer()
-                Toggle("Notify when a favor is asked", isOn: $preferences.notifiesArrivals)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .tint(Palette.commitRed)
-            }
-            NoirRow {
-                Text("Notify when an offer is answered")
-                Spacer()
-                Toggle("Notify when an offer is answered", isOn: $preferences.notifiesVerdicts)
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .tint(Palette.commitRed)
-            }
+            NotificationToggle(title: "Notify when a favor is asked", isOn: $preferences.notifiesArrivals)
+            NotificationToggle(title: "Notify when an offer is answered", isOn: $preferences.notifiesVerdicts)
             if notifications.showsHint {
                 NoirRow {
                     Text("macOS has notifications turned off.")
@@ -194,6 +178,23 @@ private struct NotificationsPane: View {
                         .buttonStyle(.noir)
                 }
             }
+        }
+    }
+}
+
+private struct NotificationToggle: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        NoirRow {
+            Text(title)
+            Spacer()
+            Toggle(title, isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .tint(Palette.commitRed)
         }
     }
 }

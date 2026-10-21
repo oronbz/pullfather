@@ -843,6 +843,20 @@ final class SyncStoreTests {
         #expect(verdicts == [["PR_1"]])
     }
 
+    @Test func aDraftGettingReviewedIsAVerdict() async throws {
+        var draft = family(1, reviewDecision: nil)
+        draft.isDraft = true
+        let github = makeGitHub(SyncFixture(authored: [draft]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        draft.reviewDecision = "CHANGES_REQUESTED"
+        github.respond(with: SyncFixture(authored: [draft]).data)
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
+    }
+
     @Test func aPullRequestNewToFamilyBringsNoVerdict() async throws {
         let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
         let store = try makeStore(github)

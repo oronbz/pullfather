@@ -45,7 +45,7 @@ struct TokenForm: View {
                 .onChange(of: token) { account.dismissSignInError() }
 
             if let error = account.signInError {
-                Notice(symbol: "xmark.octagon.fill", color: Palette.checksFailing, text: error)
+                TokenNotice(symbol: "xmark.octagon.fill", color: Palette.checksFailing, text: error)
             }
 
             HStack(spacing: 4) {
@@ -111,7 +111,7 @@ private struct OrDivider: View {
     }
 }
 
-private struct Notice: View {
+private struct TokenNotice: View {
     let symbol: String
     let color: Color
     let text: String

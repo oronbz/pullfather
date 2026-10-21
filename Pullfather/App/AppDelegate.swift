@@ -22,7 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
-    private lazy var notifier = ArrivalNotifier(
+    private lazy var notifier = Notifier(
         preferences: preferences,
         openPullRequest: { NSWorkspace.shared.open($0) },
         openPopover: { [weak self] in self?.panelController?.show() }
@@ -40,8 +40,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
-        store.onArrivals = notifier.notify
-        store.onVerdicts = notifier.notify
+        notifier.startHandlingClicks()
+        store.onArrivals = notifier.notify(arrivals:)
+        store.onVerdicts = notifier.notify(verdicts:)
         permissionRequests = Task { [account, notifications] in
             for await state in Observations({ account.state }) {
                 if case .signedIn(login: .some) = state {
