@@ -41,6 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.mainMenu = makeMainMenu()
         Task { await account.restore() }
         store.onArrivals = notifier.notify
+        store.onVerdicts = notifier.notify
         permissionRequests = Task { [account, notifications] in
             for await state in Observations({ account.state }) {
                 if case .signedIn(login: .some) = state {

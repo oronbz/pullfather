@@ -56,6 +56,10 @@ _Avoid_: Poll, fetch, reload
 **Arrival**:
 A pull request entering Business that was not there on the previous Sync.
 
+**Verdict**:
+A Family pull request's Review State changing to Approved or Changes requested since the previous Sync. A pull request new to Family brings no Verdict, and losing a Review State is not one.
+_Avoid_: Reaction, review update
+
 ### Appearance
 
 **Theme**:

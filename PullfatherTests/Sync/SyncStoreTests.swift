@@ -10,6 +10,7 @@ final class SyncStoreTests {
     var now = SyncFixtures.recordedAt
     let sleeper = ManualSleeper()
     var arrivals: [[String]] = []
+    var verdicts: [[String]] = []
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
@@ -39,6 +40,7 @@ final class SyncStoreTests {
         let account = Account(tokenStore: tokenStore, makeTransport: github.transport(token:))
         let store = SyncStore(account: account, preferences: preferences, now: { [unowned self] in now }, sleep: sleeper.sleep(for:))
         store.onArrivals = { [unowned self] in arrivals.append($0.map(\.id)) }
+        store.onVerdicts = { [unowned self] in verdicts.append($0.map(\.id)) }
         return store
     }
 
@@ -393,6 +395,14 @@ final class SyncStoreTests {
         preferences.notifiesArrivals = false
 
         #expect(!Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).notifiesArrivals)
+    }
+
+    @Test func verdictNotificationsAreOnByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.notifiesVerdicts)
+
+        preferences.notifiesVerdicts = false
+
+        #expect(!Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!).notifiesVerdicts)
     }
 
     @Test func theRefreshIntervalIsOneMinuteByDefaultAndRememberedAcrossLaunches() {
@@ -782,6 +792,98 @@ final class SyncStoreTests {
 
         #expect(store.business?.count == 3)
         #expect(arrivals.isEmpty)
+    }
+
+    private func family(_ number: Int, reviewDecision: String?) -> SyncFixture.PullRequest {
+        SyncFixture.PullRequest(number: number, createdAt: ago(hours: 1), reviewDecision: reviewDecision)
+    }
+
+    @Test func aFamilyPullRequestGettingApprovedIsAVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
+    }
+
+    @Test func changesRequestedAfterAnApprovalIsAVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "CHANGES_REQUESTED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
+    }
+
+    @Test func losingTheReviewStateIsNotAVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        await store.requestSync().value
+
+        #expect(verdicts.isEmpty)
+    }
+
+    @Test func anUnchangedReviewStateIsNotAVerdictAgain() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
+    }
+
+    @Test func aPullRequestNewToFamilyBringsNoVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: nil)], assigned: [family(2, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(store.family?.count == 2)
+        #expect(verdicts.isEmpty)
+    }
+
+    @Test func theFirstSyncAfterLaunchHasNoVerdicts() async throws {
+        let store = try makeStore(makeGitHub(SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data))
+
+        await store.requestSync().value
+
+        #expect(store.family?.count == 1)
+        #expect(verdicts.isEmpty)
+    }
+
+    @Test func verdictsFromOneSyncArriveTogether() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)], assigned: [family(2, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")], assigned: [family(2, reviewDecision: "CHANGES_REQUESTED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts.map(Set.init) == [["PR_1", "PR_2"]])
+    }
+
+    @Test func switchingToAnotherAccountDoesNotReplayItsVerdicts() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(viewer: "fredo", authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts.isEmpty)
     }
 
     @Test func aPullRequestInBothSectionsIsSelectedOncePerSection() async throws {

@@ -19,11 +19,20 @@ final class ArrivalNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     func notify(_ arrivals: [BusinessRow]) {
         guard preferences.notifiesArrivals, let notice = ArrivalNotice(arrivals: arrivals) else { return }
+        post(title: notice.title, body: notice.body, opens: notice.opens)
+    }
+
+    func notify(_ verdicts: [FamilyRow]) {
+        guard preferences.notifiesVerdicts, let notice = VerdictNotice(verdicts: verdicts) else { return }
+        post(title: notice.title, body: notice.body, opens: notice.opens)
+    }
+
+    private func post(title: String, body: String, opens: ArrivalNotice.Destination) {
         let content = UNMutableNotificationContent()
-        content.title = notice.title
-        content.body = notice.body
+        content.title = title
+        content.body = body
         content.sound = .default
-        if case .pullRequest(let url) = notice.opens {
+        if case .pullRequest(let url) = opens {
             content.userInfo = [Self.urlKey: url.absoluteString]
         }
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)

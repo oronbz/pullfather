@@ -176,6 +176,15 @@ private struct NotificationsPane: View {
                     .controlSize(.small)
                     .tint(Palette.commitRed)
             }
+            NoirRow {
+                Text("Notify when an offer is answered")
+                Spacer()
+                Toggle("Notify when an offer is answered", isOn: $preferences.notifiesVerdicts)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
+            }
             if notifications.showsHint {
                 NoirRow {
                     Text("macOS has notifications turned off.")

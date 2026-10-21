@@ -85,6 +85,7 @@ final class SyncStore {
     @ObservationIgnored private var syncedViewer: String?
     @ObservationIgnored private var removedIDs: Set<String> = []
     @ObservationIgnored var onArrivals: ([BusinessRow]) -> Void = { _ in }
+    @ObservationIgnored var onVerdicts: ([FamilyRow]) -> Void = { _ in }
 
     private static let firstRetry = Duration.seconds(15)
 
@@ -333,6 +334,7 @@ final class SyncStore {
         failure = nil
         consecutiveFailures = 0
         let previousIDs = syncedViewer == result.viewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
+        let previousReviewStates = syncedViewer == result.viewer ? family.map { Dictionary(uniqueKeysWithValues: $0.map { ($0.id, $0.reviewState) }) } : nil
         if syncedViewer != result.viewer {
             removedIDs = []
         }
@@ -380,6 +382,11 @@ final class SyncStore {
             }
         if let previousIDs, let arrivals = businessOldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
             onArrivals(arrivals)
+        }
+        if let previousReviewStates, let verdicts = family?.filter({ row in
+            row.reviewState != nil && previousReviewStates[row.id].map { $0 != row.reviewState } == true
+        }), !verdicts.isEmpty {
+            onVerdicts(verdicts)
         }
     }
 }

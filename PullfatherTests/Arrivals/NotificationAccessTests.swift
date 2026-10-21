@@ -85,9 +85,21 @@ struct NotificationAccessTests {
         #expect(relaunched.showsHint)
     }
 
-    @Test func noHintWhenArrivalNotificationsAreSwitchedOffInSettings() async {
+    @Test func theHintShowsWhileVerdictNotificationsAloneAreOn() async {
         let preferences = Preferences(defaults: defaults)
         preferences.notifiesArrivals = false
+        let access = access(FakeCenter(status: .denied), preferences: preferences)
+
+        await access.refresh()
+
+        #expect(access.showsHint)
+        #expect(access.showsPopoverHint)
+    }
+
+    @Test func noHintWhenArrivalAndVerdictNotificationsAreSwitchedOffInSettings() async {
+        let preferences = Preferences(defaults: defaults)
+        preferences.notifiesArrivals = false
+        preferences.notifiesVerdicts = false
         let access = access(FakeCenter(status: .denied), preferences: preferences)
 
         await access.refresh()

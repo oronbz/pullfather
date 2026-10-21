@@ -40,6 +40,7 @@ final class Preferences {
     private static let countModeKey = "countMode"
     private static let refreshIntervalKey = "refreshIntervalMinutes"
     private static let notifiesArrivalsKey = "notifiesArrivals"
+    private static let notifiesVerdictsKey = "notifiesVerdicts"
     private static let themeKey = "theme"
     private static let showsBusinessChecksKey = "showsBusinessChecks"
     private static let showsFamilyChecksKey = "showsFamilyChecks"
@@ -62,6 +63,10 @@ final class Preferences {
         didSet { defaults.set(notifiesArrivals, forKey: Self.notifiesArrivalsKey) }
     }
 
+    var notifiesVerdicts: Bool {
+        didSet { defaults.set(notifiesVerdicts, forKey: Self.notifiesVerdictsKey) }
+    }
+
     var theme: Theme {
         didSet { defaults.set(theme.rawValue, forKey: Self.themeKey) }
     }
@@ -80,6 +85,7 @@ final class Preferences {
         countMode = defaults.string(forKey: Self.countModeKey).flatMap(CountMode.init) ?? .business
         refreshInterval = RefreshInterval(rawValue: defaults.integer(forKey: Self.refreshIntervalKey)) ?? .oneMinute
         notifiesArrivals = defaults.object(forKey: Self.notifiesArrivalsKey) as? Bool ?? true
+        notifiesVerdicts = defaults.object(forKey: Self.notifiesVerdictsKey) as? Bool ?? true
         theme = defaults.string(forKey: Self.themeKey).flatMap(Theme.init) ?? .noir
         showsBusinessChecks = defaults.object(forKey: Self.showsBusinessChecksKey) as? Bool ?? true
         showsFamilyChecks = defaults.object(forKey: Self.showsFamilyChecksKey) as? Bool ?? true
