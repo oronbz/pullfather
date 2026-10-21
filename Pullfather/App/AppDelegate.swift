@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     private var panelController: PanelController?
     private lazy var syncTriggers = SyncTriggers(store: store)
+    private lazy var widget = WidgetPublisher(store: store)
     private lazy var notifier = Notifier(
         preferences: preferences,
         openPullRequest: { NSWorkspace.shared.open($0) },
@@ -51,6 +52,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         syncTriggers.start()
+        widget.start()
         updateChecks = Task { [updates] in await updates.checkDaily() }
         panelController = PanelController(store: store, updates: updates, upgrader: upgrader, avatars: avatars, notifications: notifications, activation: activation, actions: PanelActions(
             openPullRequest: { NSWorkspace.shared.open($0) },

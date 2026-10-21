@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000104 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000502 /* KeyboardShortcuts */; };
+		A10000000000000000000115 /* PullfatherWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* PullfatherWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -18,10 +19,32 @@
 			remoteGlobalIDString = A10000000000000000000100;
 			remoteInfo = Pullfather;
 		};
+		A10000000000000000000303 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000110;
+			remoteInfo = PullfatherWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10000000000000000000114 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000115 /* PullfatherWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000011 /* Pullfather.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pullfather.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000013 /* PullfatherWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PullfatherWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000012 /* PullfatherTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PullfatherTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,6 +55,14 @@
 				Info.plist,
 			);
 			target = A10000000000000000000100 /* Pullfather */;
+		};
+		820D8E2A306D0C3C00D49AAB /* Exceptions for "PullfatherWidget" folder in "PullfatherWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				PullfatherWidget.entitlements,
+			);
+			target = A10000000000000000000110 /* PullfatherWidget */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -49,6 +80,19 @@
 			path = PullfatherTests;
 			sourceTree = "<group>";
 		};
+		A10000000000000000000023 /* PullfatherWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				820D8E2A306D0C3C00D49AAB /* Exceptions for "PullfatherWidget" folder in "PullfatherWidget" target */,
+			);
+			path = PullfatherWidget;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000024 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +101,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000104 /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000112 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +126,8 @@
 			children = (
 				A10000000000000000000021 /* Pullfather */,
 				A10000000000000000000022 /* PullfatherTests */,
+				A10000000000000000000023 /* PullfatherWidget */,
+				A10000000000000000000024 /* Shared */,
 				A10000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -84,6 +137,7 @@
 			children = (
 				A10000000000000000000011 /* Pullfather.app */,
 				A10000000000000000000012 /* PullfatherTests.xctest */,
+				A10000000000000000000013 /* PullfatherWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -98,13 +152,16 @@
 				A10000000000000000000101 /* Sources */,
 				A10000000000000000000102 /* Frameworks */,
 				A10000000000000000000103 /* Resources */,
+				A10000000000000000000114 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A10000000000000000000304 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000021 /* Pullfather */,
+				A10000000000000000000024 /* Shared */,
 			);
 			name = Pullfather;
 			packageProductDependencies = (
@@ -113,6 +170,29 @@
 			productName = Pullfather;
 			productReference = A10000000000000000000011 /* Pullfather.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000110 /* PullfatherWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000430 /* Build configuration list for PBXNativeTarget "PullfatherWidget" */;
+			buildPhases = (
+				A10000000000000000000111 /* Sources */,
+				A10000000000000000000112 /* Frameworks */,
+				A10000000000000000000113 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000023 /* PullfatherWidget */,
+				A10000000000000000000024 /* Shared */,
+			);
+			name = PullfatherWidget;
+			packageProductDependencies = (
+			);
+			productName = PullfatherWidget;
+			productReference = A10000000000000000000013 /* PullfatherWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		A10000000000000000000200 /* PullfatherTests */ = {
 			isa = PBXNativeTarget;
@@ -150,6 +230,9 @@
 					A10000000000000000000100 = {
 						CreatedOnToolsVersion = 27.0;
 					};
+					A10000000000000000000110 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					A10000000000000000000200 = {
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = A10000000000000000000100;
@@ -174,6 +257,7 @@
 			projectRoot = "";
 			targets = (
 				A10000000000000000000100 /* Pullfather */,
+				A10000000000000000000110 /* PullfatherWidget */,
 				A10000000000000000000200 /* PullfatherTests */,
 			);
 		};
@@ -181,6 +265,13 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		A10000000000000000000103 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000113 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -204,6 +295,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000111 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A10000000000000000000201 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -218,6 +316,11 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000100 /* Pullfather */;
 			targetProxy = A10000000000000000000301 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000304 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000110 /* PullfatherWidget */;
+			targetProxy = A10000000000000000000303 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -398,6 +501,56 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000431 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PullfatherWidget/PullfatherWidget.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PullfatherWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.10.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.oronbz.Pullfather.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		A10000000000000000000432 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = PullfatherWidget/PullfatherWidget.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PullfatherWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MARKETING_VERSION = 0.10.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.oronbz.Pullfather.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -424,6 +577,15 @@
 			buildConfigurations = (
 				A10000000000000000000421 /* Debug */,
 				A10000000000000000000422 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000430 /* Build configuration list for PBXNativeTarget "PullfatherWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000431 /* Debug */,
+				A10000000000000000000432 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
