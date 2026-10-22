@@ -52,8 +52,8 @@ struct FamilyRow: Identifiable, Equatable, ListedPullRequest {
         "\(repository) #\(number)"
     }
 
-    func isVerdict(since previous: FamilyRow) -> Bool {
-        reviewState != nil && reviewState != previous.reviewState
+    func isVerdict(since previous: ReviewState?) -> Bool {
+        reviewState != nil && reviewState != previous
     }
 }
 
@@ -88,6 +88,10 @@ final class SyncStore {
     @ObservationIgnored private var consecutiveFailures = 0
     @ObservationIgnored private var syncedViewer: String?
     @ObservationIgnored private var removedIDs: Set<String> = []
+    /// Remembered for the session, not just the previous Sync, because GitHub search sometimes drops a pull request for a Sync.
+    @ObservationIgnored private var knownReviewRequests: Set<KnownReviewRequest> = []
+    /// A `nil` value is a pull request seen without a Review State; a missing key is one never seen.
+    @ObservationIgnored private var knownReviewStates: [String: ReviewState?] = [:]
     @ObservationIgnored var onArrivals: ([BusinessRow]) -> Void = { _ in }
     @ObservationIgnored var onVerdicts: ([FamilyRow]) -> Void = { _ in }
 
@@ -338,10 +342,10 @@ final class SyncStore {
         failure = nil
         consecutiveFailures = 0
         let sameViewer = syncedViewer == result.viewer
-        let previousIDs = sameViewer ? businessOldestFirst.map { Set($0.map(\.id)) } : nil
-        let previousFamily = sameViewer ? family.map { Dictionary($0.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first }) } : nil
-        if syncedViewer != result.viewer {
+        if !sameViewer {
             removedIDs = []
+            knownReviewRequests = []
+            knownReviewStates = [:]
         }
         syncedViewer = result.viewer
         let stillIndexed = Set(result.business.filter { removedIDs.contains($0.id) && !$0.pendingReviewers.contains(.user(result.viewer)) }.map(\.id))
@@ -385,12 +389,29 @@ final class SyncStore {
                     checks: pullRequest.checks
                 )
             }
-        if let previousIDs, let arrivals = businessOldestFirst?.filter({ !previousIDs.contains($0.id) }), !arrivals.isEmpty {
+        let arrivals = (businessOldestFirst ?? []).filter { !knownReviewRequests.contains(KnownReviewRequest($0)) }
+        let verdicts = (family ?? []).filter { row in knownReviewStates[row.id].map(row.isVerdict(since:)) ?? false }
+        // Rows hidden by an approval or removal in flight are remembered too, so one that comes back after the action fails isn't announced again.
+        knownReviewRequests.formUnion((oldestFirst ?? []).map(KnownReviewRequest.init))
+        knownReviewStates.merge((family ?? []).map { ($0.id, $0.reviewState) }) { _, latest in latest }
+        guard sameViewer else { return }
+        if !arrivals.isEmpty {
             onArrivals(arrivals)
         }
-        if let previousFamily, let verdicts = family?.filter({ previousFamily[$0.id].map($0.isVerdict(since:)) ?? false }), !verdicts.isEmpty {
+        if !verdicts.isEmpty {
             onVerdicts(verdicts)
         }
+    }
+}
+
+/// A re-request moves `waitingSince`, so it is a different Review Request from the one before it.
+private struct KnownReviewRequest: Hashable {
+    let id: String
+    let waitingSince: Date
+
+    init(_ row: BusinessRow) {
+        id = row.id
+        waitingSince = row.waitingSince
     }
 }
 

@@ -794,6 +794,78 @@ final class SyncStoreTests {
         #expect(arrivals.isEmpty)
     }
 
+    private func reRequested(_ pullRequest: SyncFixture.PullRequest) -> SyncFixture.PullRequest {
+        var pullRequest = pullRequest
+        pullRequest.requests.append(.user("tomhagen", at: ago(minutes: 5)))
+        return pullRequest
+    }
+
+    @Test func aPullRequestBackAfterASyncWithoutItDoesNotArriveAgain() async throws {
+        let github = makeGitHub(SyncFixture(business: [first]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: []).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(business: [first]).data)
+        await store.requestSync().value
+
+        #expect(store.business?.map(\.id) == ["PR_1"])
+        #expect(arrivals.isEmpty)
+    }
+
+    @Test func aReRequestAfterLeavingBusinessArrives() async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), requests: [.user("tomhagen", at: ago(hours: 3))])
+        let github = makeGitHub(SyncFixture(business: [pullRequest]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: []).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(business: [reRequested(pullRequest)]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_1"]])
+    }
+
+    @Test func aRequestByNameAfterATeamRequestArrives() async throws {
+        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), requests: [.team("consiglieri", at: ago(hours: 3))])
+        let github = makeGitHub(SyncFixture(business: [pullRequest]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [reRequested(pullRequest)]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_1"]])
+    }
+
+    @Test func aDraftMarkedReadyArrivesForARequestMadeWhileItWasADraft() async throws {
+        var draft = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), isDraft: true, requests: [.user("tomhagen", at: ago(hours: 3))])
+        let github = makeGitHub(SyncFixture(business: [draft]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        draft.isDraft = false
+        github.respond(with: SyncFixture(business: [draft]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_1"]])
+    }
+
+    @Test func switchingToAnotherAccountForgetsTheReviewRequestsTheFirstKnew() async throws {
+        let github = makeGitHub(SyncFixture(business: [first]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(viewer: "fredo", business: []).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(viewer: "fredo", business: [first]).data)
+        await store.requestSync().value
+
+        #expect(arrivals == [["PR_1"]])
+    }
+
     private func family(_ number: Int, reviewDecision: String?) -> SyncFixture.PullRequest {
         SyncFixture.PullRequest(number: number, createdAt: ago(hours: 1), reviewDecision: reviewDecision)
     }
@@ -887,6 +959,45 @@ final class SyncStoreTests {
         await store.requestSync().value
 
         #expect(verdicts.map(Set.init) == [["PR_1", "PR_2"]])
+    }
+
+    @Test func aPullRequestApprovedWhileMissingFromASyncIsAVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: []).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
+    }
+
+    @Test func anApprovedPullRequestBackAfterASyncWithoutItIsNotAVerdictAgain() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: []).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts.isEmpty)
+    }
+
+    @Test func anApprovalAfterLosingTheReviewStateIsAVerdict() async throws {
+        let github = makeGitHub(SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: nil)]).data)
+        await store.requestSync().value
+        github.respond(with: SyncFixture(authored: [family(1, reviewDecision: "APPROVED")]).data)
+        await store.requestSync().value
+
+        #expect(verdicts == [["PR_1"]])
     }
 
     @Test func switchingToAnotherAccountDoesNotReplayItsVerdicts() async throws {
@@ -1154,7 +1265,7 @@ final class SyncStoreTests {
         #expect(store.business?.map(\.id) == ["PR_2"])
         #expect(arrivals.isEmpty)
 
-        github.respond(with: SyncFixture(business: [requested(1, [.user("tomhagen")]), requested(2, [.user("tomhagen")])]).data)
+        github.respond(with: SyncFixture(business: [reRequested(requested(1, [.user("tomhagen")])), requested(2, [.user("tomhagen")])]).data)
         await store.requestSync().value
 
         #expect(store.business?.map(\.id) == ["PR_1", "PR_2"])

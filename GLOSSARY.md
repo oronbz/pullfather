@@ -54,10 +54,10 @@ One refresh of Business, Family and Count together from GitHub, so they never di
 _Avoid_: Poll, fetch, reload
 
 **Arrival**:
-A pull request entering Business that was not there on the previous Sync.
+A Review Request in Business that the app has not seen before this session. A pull request coming back to Business under the same Review Request, after GitHub left it out of a Sync, is not one; a re-request is.
 
 **Verdict**:
-A Family pull request's Review State changing to Approved or Changes requested since the previous Sync. A pull request new to Family brings no Verdict, and losing a Review State is not one.
+A Family pull request's Review State changing to Approved or Changes requested since the last Review State seen for it this session. A pull request new to Family brings no Verdict, and losing a Review State is not one.
 _Avoid_: Reaction, review update
 
 ### Appearance
