@@ -6,16 +6,16 @@ One number names a release: `MARKETING_VERSION` on every target in `Pullfather.x
 
 ## Cutting a release
 
-You need Xcode, and `gh` signed in with push access to `oronbz/pullfather` and `oronbz/homebrew-tap`. From the repo root, on a clean `main`:
+You need Xcode, and `gh` signed in with push access to `oronbz/pullfather` and `oronbz/homebrew-tap`. From the repo root, on `main` with nothing uncommitted (untracked files are fine):
 
 ```sh
 make release 0.2.0
 ```
 
-`make release VERSION=0.2.0` works too; leave the version off to be prompted for it. `make release` runs `scripts/release.sh`, which:
+A new feature bumps the minor version and a fix bumps the patch. `make release VERSION=0.2.0` works too; leave the version off to be prompted for it. `make release` runs `scripts/release.sh`, which:
 
-1. Checks its tools, the clean tree, the branch, and that the version is semver and not already tagged on origin.
-2. Sets `MARKETING_VERSION` on every target, commits "Bump version to 0.2.0", and pushes `main`. If the project already carries that version, as it does for 0.1.0, there is nothing to commit and it only pushes.
+1. Checks its tools, the tree, the branch, and that the version is semver and not already tagged on origin, then runs the full test suite.
+2. Sets `MARKETING_VERSION` on every target, commits "Bump version to 0.2.0", and pushes `main`.
 3. Archives the Release configuration, ad-hoc signed and universal, and verifies the signature.
 4. Zips the app with `ditto` and takes its sha256.
 5. Creates the `v0.2.0` GitHub Release on the pushed commit, with the zip and generated notes.

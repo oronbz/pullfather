@@ -3,12 +3,9 @@ import Testing
 @testable import Pullfather
 
 final class PreferencesTests {
-    private let defaultsSuite = "PreferencesTests-\(UUID().uuidString)"
-    private lazy var defaults = UserDefaults(suiteName: defaultsSuite)!
-
-    deinit {
-        UserDefaults().removePersistentDomain(forName: defaultsSuite)
-    }
+    private let testDefaults = TestDefaults()
+    private var defaults: UserDefaults { testDefaults.defaults }
+    private lazy var preferences = Preferences(defaults: defaults)
 
     @Test func checksShowInBothSectionsByDefault() {
         let preferences = Preferences(defaults: defaults)
@@ -35,5 +32,49 @@ final class PreferencesTests {
 
         #expect(relaunched.showsBusinessChecks)
         #expect(!relaunched.showsFamilyChecks)
+    }
+
+    @Test func theBusinessOrderIsRememberedAcrossLaunches() {
+        preferences.businessOrder = .oldestFirst
+
+        #expect(Preferences(defaults: defaults).businessOrder == .oldestFirst)
+    }
+
+    @Test func theCountModeIsRememberedAcrossLaunches() {
+        preferences.countMode = .off
+
+        #expect(Preferences(defaults: defaults).countMode == .off)
+    }
+
+    @Test func arrivalNotificationsAreOnByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.notifiesArrivals)
+
+        preferences.notifiesArrivals = false
+
+        #expect(!Preferences(defaults: defaults).notifiesArrivals)
+    }
+
+    @Test func verdictNotificationsAreOnByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.notifiesVerdicts)
+
+        preferences.notifiesVerdicts = false
+
+        #expect(!Preferences(defaults: defaults).notifiesVerdicts)
+    }
+
+    @Test func theRefreshIntervalIsOneMinuteByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.refreshInterval == .oneMinute)
+
+        preferences.refreshInterval = .thirtyMinutes
+
+        #expect(Preferences(defaults: defaults).refreshInterval == .thirtyMinutes)
+    }
+
+    @Test func theThemeIsNoirByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.theme == .noir)
+
+        preferences.theme = .system
+
+        #expect(Preferences(defaults: defaults).theme == .system)
     }
 }

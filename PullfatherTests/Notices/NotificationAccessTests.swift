@@ -21,7 +21,8 @@ struct NotificationAccessTests {
         }
     }
 
-    private let defaults = UserDefaults(suiteName: "NotificationAccessTests-\(UUID().uuidString)")!
+    private let testDefaults = TestDefaults()
+    private var defaults: UserDefaults { testDefaults.defaults }
 
     private func access(_ center: FakeCenter, preferences: Preferences? = nil) -> NotificationAccess {
         NotificationAccess(preferences: preferences ?? Preferences(defaults: defaults), authorizer: center.authorizer, defaults: defaults)

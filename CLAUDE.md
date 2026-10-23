@@ -4,6 +4,10 @@ macOS menu bar app for GitHub pull requests. Tagline: "It's not personal. It's j
 
 Design is settled. The app icon, menu bar template glyph and popover spec are in `design/`, starting from `design/README.md`. The live canvas is https://claude.ai/artifact/6n3ccwQSHFF257kD9uLvPf. Don't redesign the icon unless asked.
 
+Sync data flow (GitHub query → rows → views), and the checklist for adding a field to a row: `docs/sync.md`.
+
+Release: `make release x.y.z` on `main`; a feature bumps minor, a fix bumps patch. See `docs/releasing.md`.
+
 ## Agent skills
 
 ### Issue tracker

@@ -72,7 +72,7 @@ macOS 26 (Tahoe) or later.
 
 ## For contributors
 
-- [`GLOSSARY.md`](GLOSSARY.md) defines the domain language: Business, Family, Sync, Waiting Time, Arrival. Use these terms in code and issues.
+- [`GLOSSARY.md`](GLOSSARY.md) defines the domain language. Use its terms in code and issues.
 - [`docs/adr/`](docs/adr) records the decisions that would surprise you.
 - [`design/`](design) holds the icon, the menu bar glyph and the popover spec.
 - [`docs/releasing.md`](docs/releasing.md) covers cutting a release and the Homebrew cask.

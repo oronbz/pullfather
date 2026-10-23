@@ -55,8 +55,8 @@ command -v ditto      >/dev/null 2>&1 || die "ditto is required"
 
 [[ -f "$PROJECT/project.pbxproj" ]] || die "Run this script from the project root"
 
-if [[ -n "$(git status --porcelain)" ]]; then
-    die "Working tree is not clean. Commit or stash changes first."
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+    die "Working tree has uncommitted changes. Commit or stash them first."
 fi
 
 [[ "$(git branch --show-current)" == "main" ]] || die "Release from main"
@@ -85,7 +85,22 @@ fi
 bold "Releasing v$NEW_VERSION (current: $CURRENT_VERSION)"
 echo
 
-bold "[1/6] Bumping version to $NEW_VERSION..."
+bold "[1/7] Running tests..."
+
+xcodebuild \
+    -project "$PROJECT" \
+    -scheme "$SCHEME" \
+    -destination "platform=macOS" \
+    test \
+    -quiet \
+    CODE_SIGN_STYLE=Manual \
+    CODE_SIGN_IDENTITY=- \
+    DEVELOPMENT_TEAM= \
+    || die "Tests failed"
+
+green "  Tests passed"
+
+bold "[2/7] Bumping version to $NEW_VERSION..."
 
 if [[ "$NEW_VERSION" == "$CURRENT_VERSION" ]]; then
     green "  Already at $NEW_VERSION, nothing to bump"
@@ -95,17 +110,17 @@ else
     green "  Version bumped in $PROJECT"
 fi
 
-bold "[2/6] Committing and pushing..."
+bold "[3/7] Committing and pushing..."
 
-if [[ -n "$(git status --porcelain)" ]]; then
-    git add -A
+if ! git diff --quiet -- "$PROJECT/project.pbxproj"; then
+    git add "$PROJECT/project.pbxproj"
     git commit -m "Bump version to $NEW_VERSION"
 fi
 git push
 
 green "  Pushed to origin/main"
 
-bold "[3/6] Building Release archive..."
+bold "[4/7] Building Release archive..."
 
 xcodebuild \
     -project "$PROJECT" \
@@ -126,7 +141,7 @@ codesign --verify --deep --strict "$APP_PATH" || die "Ad-hoc signature does not 
 
 green "  Archive built ($(lipo -archs "$APP_PATH/Contents/MacOS/Pullfather"))"
 
-bold "[4/6] Creating zip..."
+bold "[5/7] Creating zip..."
 
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 
@@ -134,7 +149,7 @@ SHA256=$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')
 
 green "  Zip created (sha256: $SHA256)"
 
-bold "[5/6] Creating GitHub release v$NEW_VERSION..."
+bold "[6/7] Creating GitHub release v$NEW_VERSION..."
 
 gh release create "v$NEW_VERSION" "$ZIP_PATH" \
     --repo "$REPO" \
@@ -145,7 +160,7 @@ gh release create "v$NEW_VERSION" "$ZIP_PATH" \
 RELEASE_URL="https://github.com/$REPO/releases/tag/v$NEW_VERSION"
 green "  Release created: $RELEASE_URL"
 
-bold "[6/6] Updating Homebrew tap..."
+bold "[7/7] Updating Homebrew tap..."
 
 gh repo clone "$TAP_REPO" "$TAP_CLONE" -- --depth 1 --quiet
 

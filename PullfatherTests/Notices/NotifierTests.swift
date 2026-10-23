@@ -3,13 +3,9 @@ import Testing
 @testable import Pullfather
 
 final class NotifierTests {
-    let defaultsSuite = "NotifierTests-\(UUID().uuidString)"
-    lazy var preferences = Preferences(defaults: UserDefaults(suiteName: defaultsSuite)!)
+    let testDefaults = TestDefaults()
+    lazy var preferences = Preferences(defaults: testDefaults.defaults)
     var posted: [Notice] = []
-
-    deinit {
-        UserDefaults().removePersistentDomain(forName: defaultsSuite)
-    }
 
     private func makeNotifier() -> Notifier {
         Notifier(
@@ -20,15 +16,8 @@ final class NotifierTests {
         )
     }
 
-    private let verdict = FamilyRow(
-        id: "PR_1079", number: 1079, title: "Add offline banner", url: URL(string: "https://github.com/corleone/casino/pull/1079")!,
-        repository: "corleone/casino", branch: "offline-banner", lastActivity: "now", lineChanges: LineChanges(additions: 2, deletions: 4), isDraft: false, reviewState: .approved, checks: nil
-    )
-
-    private let arrival = BusinessRow(
-        id: "PR_1088", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-        repository: "corleone/casino", branch: "swiftui-settings", author: "sonny", avatarURL: nil, waitingSince: .now, waitingTime: "now", lineChanges: LineChanges(additions: 2, deletions: 4), checks: nil, isRequestedByName: true, isRequestedThroughTeam: false
-    )
+    private let verdict = FamilyRow.fixture(1079)
+    private let arrival = BusinessRow.fixture(1088)
 
     @Test func aVerdictIsPostedWhileVerdictNotificationsAreOn() {
         makeNotifier().notify(verdicts: [verdict])

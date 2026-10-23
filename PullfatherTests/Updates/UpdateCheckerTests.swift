@@ -9,12 +9,11 @@ final class UpdateCheckerTests {
     var now = Date(timeIntervalSince1970: 1_790_000_000)
     let sleeper = ManualSleeper()
     var account: Account!
-    let defaultsSuite = "UpdateCheckerTests-\(UUID().uuidString)"
-    lazy var defaults = UserDefaults(suiteName: defaultsSuite)!
+    let testDefaults = TestDefaults()
+    lazy var defaults = testDefaults.defaults
 
     deinit {
         try? FileManager.default.removeItem(at: directory)
-        UserDefaults().removePersistentDomain(forName: defaultsSuite)
     }
 
     private func makeChecker(runningVersion: String = "0.3.0", signedIn: Bool = true) throws -> UpdateChecker {

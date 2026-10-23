@@ -7,6 +7,8 @@ macOS menu bar app for GitHub pull requests (a PullBar Pro alternative).
 **Live design canvas:** https://claude.ai/artifact/6n3ccwQSHFF257kD9uLvPf
 (app icon, menu bar glyph, popover mockup; the source of truth if these files drift)
 
+This covers the icon, the glyph and how the popover looks. Behaviour (context menus, Settings, notifications) lives in `GLOSSARY.md` and the code.
+
 ## Files
 
 | File | Use |
