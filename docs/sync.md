@@ -2,7 +2,7 @@
 
 One Sync is one GraphQL request. Its data moves through these stages, each in one place:
 
-1. **Query**: `SyncQuery.text` in `Pullfather/Sync/SyncQuery.swift`. Three searches (`business`, `authored`, `assigned`, built by `SyncQuery.variables`) share the `PullRequestFields` fragment.
+1. **Query**: `SyncQuery.text` in `Pullfather/Sync/SyncQuery.swift`. Its searches share the `PullRequestFields` fragment.
 2. **Decode**: `SyncQuery.decode` turns the response into a `SyncResult` of `PullRequest` values (same file, private `Response` and `Node` types).
 3. **Rows**: `SyncStore.sync(token:)` in `Pullfather/Sync/SyncStore.swift` maps each `PullRequest` to a `BusinessRow` or `FamilyRow` (types in `Pullfather/Sync/Rows.swift`), then reports Arrivals and Verdicts through `onArrivals` and `onVerdicts`.
 4. **Views**: `BusinessSection` and `FamilySection` in `Pullfather/Panel/` lay rows out with `PullRequestRow` and `RowText` from `PanelSection.swift`.
@@ -19,4 +19,4 @@ Touch every stage, in order:
 
 ## Tests
 
-The `SyncStore` suites in `PullfatherTests/Sync/` share `SyncStoreTestCase` (a signed-in account on a `FakeGitHub`), one suite per concern: `SyncStoreTests` (what Business and Family hold), `SyncScheduleTests`, `SelectionTests`, `ArrivalTests`, `VerdictTests` and `ReviewerActionTests` (removing yourself, approving).
+The `SyncStore` suites in `PullfatherTests/Sync/`, one per concern, share `SyncStoreTestCase`: a signed-in account on a `FakeGitHub`. `ReviewerActionTests` covers removing yourself and approving.

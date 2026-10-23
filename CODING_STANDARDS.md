@@ -1,6 +1,6 @@
 # Coding standards
 
-Judgement calls a reviewer checks on every diff. Mechanical rules live in the code (for example `TestDefaults` for test `UserDefaults`), not here.
+Judgement calls a reviewer checks on every diff.
 
 ## Domain language
 
@@ -10,4 +10,5 @@ Judgement calls a reviewer checks on every diff. Mechanical rules live in the co
 ## Tests
 
 - **Settings tests read as behaviour.** A test for a setting names its default and that it is remembered across launches, as `theThemeIsNoirByDefaultAndRememberedAcrossLaunches` does, and lives in `PreferencesTests`.
-- **One suite per concern.** A new `SyncStore` test goes in the suite for its concern (see `docs/sync.md`), not in whichever file is open.
+- **One suite per concern.** A new `SyncStore` test goes in the `PullfatherTests/Sync/` suite named for its concern.
+- **Tests build state through the support helpers.** `UserDefaults` comes from `TestDefaults`, and a hand-built row from `BusinessRow.fixture` or `FamilyRow.fixture`, so a new field or a leaked suite stays a one-file change.
