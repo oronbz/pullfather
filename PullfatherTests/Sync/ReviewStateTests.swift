@@ -113,6 +113,12 @@ final class ReviewStateTests: SyncStoreTestCase {
         #expect(try await reviewState(of: pullRequest) == .reRequested)
     }
 
+    @Test func theFirstRequestIsNotAReRequestOnceItsCommentsAreResolved() async throws {
+        let pullRequest = family(1, threads: [thread(resolved: true, ("copilot-pull-request-reviewer", 30))], requests: [.user("fredo", at: ago(minutes: 40))])
+
+        #expect(try await reviewState(of: pullRequest) == nil)
+    }
+
     @Test func aRequestBeforeAnyFeedbackShowsNothing() async throws {
         #expect(try await reviewState(of: family(1, requests: [.user("fredo", at: ago(minutes: 90))])) == nil)
     }
