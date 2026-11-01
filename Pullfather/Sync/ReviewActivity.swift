@@ -7,7 +7,7 @@ nonisolated enum ReviewState: Equatable, Sendable {
     case reRequested
 }
 
-/// Reviews and comment threads on a pull request as `ReviewQuery` fetched them, the author's own comments included.
+/// Reviews and comment threads on a pull request as `ReviewQuery` fetched them, the viewer's own comments included.
 nonisolated struct FetchedReviews: Equatable, Sendable {
     struct Comment: Equatable, Sendable {
         let author: String?
@@ -44,7 +44,7 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
 
     struct Thread: Equatable, Sendable {
         let isResolved: Bool
-        /// When anyone but the author commented on it.
+        /// When anyone but the viewer commented on it.
         let feedback: [Date]
     }
 
@@ -55,11 +55,11 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
     /// When anyone asked a person or team for review, first requests included.
     let requests: [Date]
 
-    init(_ pullRequest: PullRequest, _ fetched: FetchedReviews) {
+    init(_ pullRequest: PullRequest, _ fetched: FetchedReviews, viewer: String) {
         decision = pullRequest.reviewDecision
         reviews = fetched.reviews
         threads = fetched.threads.map { thread in
-            Thread(isResolved: thread.isResolved, feedback: thread.comments.filter { $0.author != pullRequest.author }.map(\.publishedAt))
+            Thread(isResolved: thread.isResolved, feedback: thread.comments.filter { $0.author != viewer }.map(\.publishedAt))
         }
         requests = pullRequest.reviewRequests.filter { $0.reviewer != .other }.map(\.requestedAt)
     }

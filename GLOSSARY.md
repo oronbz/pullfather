@@ -27,10 +27,10 @@ A pending ask for your review on a pull request. It ends when you submit a revie
 A Review Request that reaches you through a team you belong to rather than by name.
 
 **Review State**:
-Whose move it is on a Family pull request, the first that holds of: Re-requested, when anyone asked a person or team for review after the latest Feedback (asking a bot doesn't count, and a request later withdrawn still does); Changes requested, when a reviewer's latest decision asks for changes; Commented, when an unresolved review thread has a comment from anyone but the author, bots included; Approved; or none. Where the base branch requires reviews, GitHub's own decision says whether it is Approved or Changes requested. An approval GitHub dismissed counts as none.
+Whose move it is on a Family pull request, the first that holds of: Re-requested, when anyone asked a person or team for review after the latest Feedback (asking a bot doesn't count, and a request later withdrawn still does); Changes requested, when a reviewer's latest decision asks for changes; Commented, when an unresolved review thread has a comment from anyone but you, bots and the author of a pull request assigned to you included; Approved; or none. Where the base branch requires reviews, GitHub's own decision says whether it is Approved or Changes requested. An approval GitHub dismissed counts as none.
 
 **Feedback**:
-An approval, a request for changes or a dismissed review, dated when it was submitted, or a comment on a review thread by anyone but the author, dated when its review was submitted. A summary-only Commented review is not Feedback, so a bot re-reviewing a push without new comments doesn't end Re-requested. Only a pull request's 50 newest threads and each one's 20 newest comments are read.
+An approval, a request for changes or a dismissed review, dated when it was submitted, or a comment on a review thread by anyone but you, dated when its review was submitted. A summary-only Commented review is not Feedback, so a bot re-reviewing a push without new comments doesn't end Re-requested. Only a pull request's 50 newest threads and each one's 20 newest comments are read.
 
 **Checks**:
 The combined CI result on a pull request's latest commit: passing, running, or failing.

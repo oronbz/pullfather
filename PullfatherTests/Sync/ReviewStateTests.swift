@@ -39,6 +39,22 @@ final class ReviewStateTests: SyncStoreTestCase {
         #expect(try await reviewState(of: family(1, threads: [thread(("tomhagen", 30))])) == nil)
     }
 
+    @Test func onAPullRequestAssignedToMeItsAuthorsCommentsShowCommented() async throws {
+        let assigned = SyncFixture.PullRequest(number: 1, author: "sonny", createdAt: ago(hours: 2), threads: [thread(("sonny", 30))])
+
+        let store = try await sync(SyncFixture(assigned: [assigned]).data)
+
+        #expect(store.family?.first?.reviewState == .commented)
+    }
+
+    @Test func onAPullRequestAssignedToMeMyOwnCommentsShowNothing() async throws {
+        let assigned = SyncFixture.PullRequest(number: 1, author: "sonny", createdAt: ago(hours: 2), threads: [thread(("tomhagen", 30))])
+
+        let store = try await sync(SyncFixture(assigned: [assigned]).data)
+
+        #expect(store.family?.first?.reviewState == nil)
+    }
+
     @Test func resolvedCommentsShowNothing() async throws {
         #expect(try await reviewState(of: family(1, threads: [thread(resolved: true, ("fredo", 30))])) == nil)
     }

@@ -335,7 +335,7 @@ final class SyncStore {
                     lastActivity: RelativeTime.format(pullRequest.updatedAt, relativeTo: now),
                     lineChanges: pullRequest.lineChanges,
                     isDraft: pullRequest.isDraft,
-                    reviewState: ReviewActivity(pullRequest, fetchedReviews[pullRequest.id] ?? FetchedReviews()).state,
+                    reviewState: ReviewActivity(pullRequest, fetchedReviews[pullRequest.id] ?? FetchedReviews(), viewer: result.viewer).state,
                     checks: pullRequest.checks
                 )
             }
