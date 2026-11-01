@@ -11,11 +11,6 @@ nonisolated struct ReviewRequest: Equatable, Sendable {
     let requestedAt: Date
 }
 
-nonisolated enum ReviewState: String, Equatable, Sendable {
-    case approved = "APPROVED"
-    case changesRequested = "CHANGES_REQUESTED"
-}
-
 nonisolated enum Checks: Equatable, Sendable {
     case passing
     case running
@@ -60,7 +55,7 @@ nonisolated struct PullRequest: Equatable, Sendable {
     let updatedAt: Date
     let isDraft: Bool
     let lineChanges: LineChanges
-    let reviewState: ReviewState?
+    let reviewDecision: ReviewActivity.Decision?
     let checks: Checks?
     let reviewRequests: [ReviewRequest]
     let pendingReviewers: [ReviewRequest.Reviewer]
@@ -88,17 +83,6 @@ nonisolated enum SyncQuery {
             nodes {
               ...PullRequestFields
               ... on PullRequest {
-                timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT], last: 20) {
-                  nodes {
-                    ... on ReviewRequestedEvent {
-                      createdAt
-                      requestedReviewer {
-                        __typename
-                        ... on User { login }
-                      }
-                    }
-                  }
-                }
                 reviewRequests(first: 100) {
                   nodes {
                     requestedReviewer {
@@ -143,6 +127,17 @@ nonisolated enum SyncQuery {
             nodes {
               commit {
                 statusCheckRollup { state }
+              }
+            }
+          }
+          timelineItems(itemTypes: [REVIEW_REQUESTED_EVENT], last: 20) {
+            nodes {
+              ... on ReviewRequestedEvent {
+                createdAt
+                requestedReviewer {
+                  __typename
+                  ... on User { login }
+                }
               }
             }
           }
@@ -273,6 +268,12 @@ nonisolated enum SyncQuery {
         let timelineItems: Timeline?
         let reviewRequests: PendingRequests?
 
+        private var requests: [ReviewRequest] {
+            (timelineItems?.nodes ?? []).map {
+                ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
+            }
+        }
+
         var pullRequest: PullRequest {
             PullRequest(
                 id: id,
@@ -287,11 +288,9 @@ nonisolated enum SyncQuery {
                 updatedAt: updatedAt,
                 isDraft: isDraft,
                 lineChanges: LineChanges(additions: additions, deletions: deletions),
-                reviewState: reviewDecision.flatMap(ReviewState.init),
+                reviewDecision: reviewDecision.flatMap(ReviewActivity.Decision.init),
                 checks: commits.checks,
-                reviewRequests: (timelineItems?.nodes ?? []).map {
-                    ReviewRequest(reviewer: $0.requestedReviewer?.reviewer ?? .other, requestedAt: $0.createdAt)
-                },
+                reviewRequests: requests,
                 pendingReviewers: (reviewRequests?.nodes ?? []).map { $0.requestedReviewer?.reviewer ?? .other }
             )
         }

@@ -10,6 +10,8 @@ nonisolated final class FakeGitHub: Sendable {
         var response: Data?
         var readResponse: Data?
         var lastVariables: [String: GraphQLVariable] = [:]
+        var reviewBatches: [[String]] = []
+        var reviewFailure: GitHubFailure?
         var writes: [RESTRequest] = []
         var writeFailure: GitHubFailure?
         var mutations: [GraphQLMutation] = []
@@ -33,6 +35,15 @@ nonisolated final class FakeGitHub: Sendable {
 
     var lastVariables: [String: GraphQLVariable] {
         state.withLock { $0.lastVariables }
+    }
+
+    /// The pull request IDs each `ReviewQuery` asked for, in order.
+    var reviewBatches: [[String]] {
+        state.withLock { $0.reviewBatches }
+    }
+
+    func failReviews(with failure: GitHubFailure?) {
+        state.withLock { $0.reviewFailure = failure }
     }
 
     var writes: [RESTRequest] {
@@ -92,6 +103,9 @@ nonisolated final class FakeGitHub: Sendable {
             }
             return Data(#"{"data":{}}"#.utf8)
         }
+        if query == ReviewQuery.text {
+            return try reviews(token: token, variables: variables)
+        }
         state.withLock { $0.lastVariables = variables }
         guard let login = viewers[token] else { throw failure }
         await passGate()
@@ -100,6 +114,23 @@ nonisolated final class FakeGitHub: Sendable {
             throw scriptedFailure
         }
         return response ?? Data(#"{"data":{"viewer":{"login":"\#(login)"}}}"#.utf8)
+    }
+
+    /// Answers from the `reviews` map in the last Sync response, without counting as a request or waiting at the gate, so a Sync still reads as one request.
+    private func reviews(token: String, variables: [String: GraphQLVariable]) throws(GitHubFailure) -> Data {
+        guard viewers[token] != nil else { throw failure }
+        guard case .strings(let ids) = variables["ids"] else { throw .other("ReviewQuery sent no IDs.") }
+        let (scriptedFailure, reviewFailure, response) = state.withLock { state in
+            state.reviewBatches.append(ids)
+            return (state.scriptedFailure, state.reviewFailure, state.response)
+        }
+        if let failure = scriptedFailure ?? reviewFailure {
+            throw failure
+        }
+        let payload = response.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["data"] as? [String: Any]
+        let reviews = payload?["reviews"] as? [String: Any] ?? [:]
+        let nodes = ids.map { reviews[$0] ?? NSNull() }
+        return try! JSONSerialization.data(withJSONObject: ["data": ["nodes": nodes]])
     }
 
     fileprivate func send(token: String, request: RESTRequest) async throws(GitHubFailure) -> Data {

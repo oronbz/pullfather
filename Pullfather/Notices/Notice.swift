@@ -37,7 +37,11 @@ struct Notice: Equatable {
             return nil
         case 1:
             let verdict = verdicts[0]
-            let title = verdict.reviewState == .changesRequested ? "They want to renegotiate" : "Your offer was accepted"
+            let title = switch verdict.reviewState {
+            case .changesRequested: "They want to renegotiate"
+            case .commented: "They have notes"
+            case .approved, .reRequested, nil: "Your offer was accepted"
+            }
             self.init(title: title, body: "\(verdict.reference) · \(verdict.title)", opens: .pullRequest(verdict.url))
         default:
             self.init(summary: "\(verdicts.count) verdicts are in")

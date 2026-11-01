@@ -225,20 +225,6 @@ final class SyncStoreTests: SyncStoreTestCase {
     }
 
     @Test(arguments: [
-        ("APPROVED", .approved),
-        ("CHANGES_REQUESTED", .changesRequested),
-        ("REVIEW_REQUIRED", nil),
-        (nil, nil),
-    ] as [(String?, ReviewState?)])
-    func familyRowsShowTheirReviewState(reviewDecision: String?, expected: ReviewState?) async throws {
-        let pullRequest = SyncFixture.PullRequest(number: 1, createdAt: ago(days: 1), reviewDecision: reviewDecision)
-
-        let store = try await sync(SyncFixture(authored: [pullRequest]).data)
-
-        #expect(store.family?.first?.reviewState == expected)
-    }
-
-    @Test(arguments: [
         ("SUCCESS", .passing),
         ("PENDING", .running),
         ("EXPECTED", .running),

@@ -11,6 +11,7 @@ nonisolated enum GraphQLVariable: Encodable, Equatable, Sendable, ExpressibleByS
     case string(String)
     case int(Int)
     case bool(Bool)
+    case strings([String])
 
     init(stringLiteral value: String) { self = .string(value) }
     init(integerLiteral value: Int) { self = .int(value) }
@@ -22,6 +23,7 @@ nonisolated enum GraphQLVariable: Encodable, Equatable, Sendable, ExpressibleByS
         case .string(let value): try container.encode(value)
         case .int(let value): try container.encode(value)
         case .bool(let value): try container.encode(value)
+        case .strings(let value): try container.encode(value)
         }
     }
 }

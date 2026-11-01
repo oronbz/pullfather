@@ -231,6 +231,19 @@ final class SyncStore {
         }
     }
 
+    private static let unexpectedResponse = GitHubFailure.other("GitHub sent an unexpected response.")
+
+    private static func reviews(of ids: [String], from transport: any GitHubTransport) async throws(GitHubFailure) -> [String: FetchedReviews] {
+        var reviews: [String: FetchedReviews] = [:]
+        for start in stride(from: 0, to: ids.count, by: ReviewQuery.batchSize) {
+            let batch = Array(ids[start..<min(start + ReviewQuery.batchSize, ids.count)])
+            let data = try await transport.send(ReviewQuery.text, variables: ReviewQuery.variables(ids: batch))
+            guard let decoded = try? ReviewQuery.decode(data) else { throw unexpectedResponse }
+            reviews.merge(decoded) { _, latest in latest }
+        }
+        return reviews
+    }
+
     @discardableResult
     func requestSync() -> Task<Void, Never> {
         if let inFlight {
@@ -261,10 +274,13 @@ final class SyncStore {
         isSyncing = true
         defer { isSyncing = false }
         let result: SyncResult
+        let fetchedReviews: [String: FetchedReviews]
         do throws(GitHubFailure) {
-            let data = try await account.makeTransport(token).send(SyncQuery.text, variables: SyncQuery.variables)
-            guard let decoded = try? SyncQuery.decode(data) else { throw .other("GitHub sent an unexpected response.") }
+            let transport = account.makeTransport(token)
+            let data = try await transport.send(SyncQuery.text, variables: SyncQuery.variables)
+            guard let decoded = try? SyncQuery.decode(data) else { throw Self.unexpectedResponse }
             result = decoded
+            fetchedReviews = try await Self.reviews(of: decoded.family.map(\.id), from: transport)
         } catch {
             failure = (error, token)
             consecutiveFailures += 1
@@ -319,7 +335,7 @@ final class SyncStore {
                     lastActivity: RelativeTime.format(pullRequest.updatedAt, relativeTo: now),
                     lineChanges: pullRequest.lineChanges,
                     isDraft: pullRequest.isDraft,
-                    reviewState: pullRequest.reviewState,
+                    reviewState: ReviewActivity(pullRequest, fetchedReviews[pullRequest.id] ?? FetchedReviews()).state,
                     checks: pullRequest.checks
                 )
             }

@@ -50,6 +50,8 @@ extension ReviewBadge {
         switch reviewState {
         case .approved: self.init(title: "Approved", color: Palette.approved)
         case .changesRequested: self.init(title: "Changes requested", color: Palette.amber)
+        case .commented: self.init(title: "Commented", color: Palette.checksRunning)
+        case .reRequested: self.init(title: "Re-requested", color: Palette.textSecondary)
         }
     }
 }

@@ -27,7 +27,10 @@ A pending ask for your review on a pull request. It ends when you submit a revie
 A Review Request that reaches you through a team you belong to rather than by name.
 
 **Review State**:
-The overall review verdict on a Family pull request: Approved, Changes requested, or none yet.
+Whose move it is on a Family pull request, the first that holds of: Re-requested, when anyone asked a person or team for review after the latest Feedback (asking a bot doesn't count, and a request later withdrawn still does); Changes requested, when a reviewer's latest decision asks for changes; Commented, when an unresolved review thread has a comment from anyone but the author, bots included; Approved; or none. Where the base branch requires reviews, GitHub's own decision says whether it is Approved or Changes requested. An approval GitHub dismissed counts as none.
+
+**Feedback**:
+An approval, a request for changes or a dismissed review, dated when it was submitted, or a comment on a review thread by anyone but the author, dated when its review was submitted. A summary-only Commented review is not Feedback, so a bot re-reviewing a push without new comments doesn't end Re-requested. Only a pull request's 50 newest threads and each one's 20 newest comments are read.
 
 **Checks**:
 The combined CI result on a pull request's latest commit: passing, running, or failing.
@@ -57,7 +60,7 @@ _Avoid_: Poll, fetch, reload
 A Review Request in Business that the app has not seen before this session. A pull request coming back to Business under the same Review Request, after GitHub left it out of a Sync, is not one; a re-request is.
 
 **Verdict**:
-A Family pull request's Review State changing to Approved or Changes requested since the last Review State seen for it this session. A pull request new to Family brings no Verdict, and losing a Review State is not one.
+A Family pull request's Review State changing to Approved, Changes requested or Commented since the last Review State seen for it this session. Re-requested is the author's own move, so it is never a Verdict. A pull request new to Family brings no Verdict, and losing a Review State is not one.
 _Avoid_: Reaction, review update
 
 ### Appearance

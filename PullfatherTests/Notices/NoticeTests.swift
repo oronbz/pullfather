@@ -43,6 +43,14 @@ struct NoticeTests {
         #expect(notice.opens == .pullRequest(URL(string: "https://github.com/corleone/casino/pull/1084")!))
     }
 
+    @Test func oneRoundOfCommentsNamesThePullRequestAndOpensIt() throws {
+        let notice = try #require(Notice(verdicts: [FamilyRow.fixture(1084, title: "Refactor push routing", reviewState: .commented)]))
+
+        #expect(notice.title == "They have notes")
+        #expect(notice.body == "corleone/casino #1084 · Refactor push routing")
+        #expect(notice.opens == .pullRequest(URL(string: "https://github.com/corleone/casino/pull/1084")!))
+    }
+
     @Test func severalVerdictsCollapseIntoOneNoticeThatOpensThePopover() throws {
         let notice = try #require(Notice(verdicts: [
             FamilyRow.fixture(1, title: "One", reviewState: .approved),

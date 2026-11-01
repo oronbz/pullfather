@@ -52,7 +52,7 @@ struct FamilyRow: Identifiable, Equatable, ListedPullRequest {
     }
 
     func isVerdict(since previous: ReviewState?) -> Bool {
-        reviewState != nil && reviewState != previous
+        reviewState != nil && reviewState != .reRequested && reviewState != previous
     }
 }
 
@@ -87,7 +87,11 @@ extension FamilyRow {
         FamilyRow(id: "4", number: 1079, title: "Add offline banner", url: URL(string: "https://github.com/corleone/casino/pull/1079")!,
                   repository: "corleone/casino", branch: "offline-banner", lastActivity: "3d", lineChanges: LineChanges(additions: 86, deletions: 9), isDraft: false, reviewState: .approved, checks: .passing),
         FamilyRow(id: "7", number: 1102, title: "Tidy up the casino ledger", url: URL(string: "https://github.com/corleone/casino/pull/1102")!,
-                  repository: "corleone/casino", branch: "casino-ledger", lastActivity: "1w", lineChanges: LineChanges(additions: 31, deletions: 58), isDraft: false, reviewState: nil, checks: .running),
+                  repository: "corleone/casino", branch: "casino-ledger", lastActivity: "1w", lineChanges: LineChanges(additions: 31, deletions: 58), isDraft: false, reviewState: .commented, checks: .running),
+        FamilyRow(id: "8", number: 1110, title: "Move the olive oil invoices to the new ledger", url: URL(string: "https://github.com/corleone/olive-oil/pull/1110")!,
+                  repository: "corleone/olive-oil", branch: "olive-oil-invoices", lastActivity: "2w", lineChanges: LineChanges(additions: 12, deletions: 3), isDraft: false, reviewState: .reRequested, checks: .passing),
+        FamilyRow(id: "9", number: 1113, title: "Retire the old switchboard", url: URL(string: "https://github.com/corleone/casino/pull/1113")!,
+                  repository: "corleone/casino", branch: "retire-switchboard", lastActivity: "3w", lineChanges: LineChanges(additions: 0, deletions: 412), isDraft: false, reviewState: nil, checks: .passing),
     ]
 }
 #endif

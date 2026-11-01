@@ -132,7 +132,21 @@ nonisolated enum SyncFixtures {
             }
           ]
         },
-        "assigned": { "nodes": [] }
+        "assigned": { "nodes": [] },
+        "reviews": {
+          "PR_kwDOAAAAAc5ddddd": {
+            "id": "PR_kwDOAAAAAc5ddddd",
+            "latestOpinionatedReviews": { "nodes": [{ "state": "APPROVED", "submittedAt": "2026-09-21T09:41:00Z" }] },
+            "dismissedReviews": { "nodes": [] },
+            "reviewThreads": { "nodes": [] }
+          },
+          "PR_kwDOAAAAAc5eeeee": {
+            "id": "PR_kwDOAAAAAc5eeeee",
+            "latestOpinionatedReviews": { "nodes": [{ "state": "CHANGES_REQUESTED", "submittedAt": "2026-09-23T09:41:00Z" }] },
+            "dismissedReviews": { "nodes": [] },
+            "reviewThreads": { "nodes": [{ "isResolved": false, "comments": { "nodes": [{ "createdAt": "2026-09-23T09:41:00Z", "publishedAt": "2026-09-23T09:41:00Z", "author": { "login": "fredo" } }] } }] }
+          }
+        }
       }
     }
     """#.utf8)
@@ -142,6 +156,24 @@ nonisolated struct SyncFixture {
     enum Request {
         case user(String, at: Date)
         case team(String, at: Date)
+        case bot(String, at: Date)
+    }
+
+    struct Review {
+        var state: String
+        var at: Date
+    }
+
+    struct Comment {
+        var author: String
+        var at: Date
+        /// When it was drafted, if earlier than `at`, its publishing as part of a review.
+        var drafted: Date?
+    }
+
+    struct Thread {
+        var isResolved = false
+        var comments: [Comment]
     }
 
     enum Reviewer {
@@ -164,6 +196,8 @@ nonisolated struct SyncFixture {
         var rollupState: String?
         var requests: [Request] = []
         var pending: [Reviewer] = []
+        var reviews: [Review] = []
+        var threads: [Thread] = []
     }
 
     var viewer = "tomhagen"
@@ -177,6 +211,7 @@ nonisolated struct SyncFixture {
             "business": ["nodes": Self.nodes(business)],
             "authored": ["nodes": Self.nodes(authored)],
             "assigned": ["nodes": Self.nodes(assigned)],
+            "reviews": Self.reviews(authored + assigned),
         ]]
         return try! JSONSerialization.data(withJSONObject: response)
     }
@@ -206,6 +241,8 @@ nonisolated struct SyncFixture {
                         ["createdAt": formatter.string(from: date), "requestedReviewer": ["__typename": "User", "login": login]]
                     case .team(let slug, let date):
                         ["createdAt": formatter.string(from: date), "requestedReviewer": ["__typename": "Team", "slug": slug]]
+                    case .bot(_, let date):
+                        ["createdAt": formatter.string(from: date), "requestedReviewer": ["__typename": "Bot"]]
                     }
                 }],
                 "reviewRequests": ["nodes": pullRequest.pending.map { reviewer -> [String: Any] in
@@ -216,5 +253,31 @@ nonisolated struct SyncFixture {
                 }],
             ]
         }
+    }
+
+    /// Answers `ReviewQuery`, keyed by pull request ID; FakeGitHub picks out the IDs each batch asks for.
+    private static func reviews(_ pullRequests: [PullRequest]) -> [String: Any] {
+        let formatter = ISO8601DateFormatter()
+        return Dictionary(pullRequests.map { pullRequest -> (String, Any) in
+            let node: [String: Any] = [
+                "id": "PR_\(pullRequest.number)",
+                "latestOpinionatedReviews": ["nodes": pullRequest.reviews.filter { $0.state != "DISMISSED" }.map { review -> [String: Any] in
+                    ["state": review.state, "submittedAt": formatter.string(from: review.at)]
+                }],
+                "dismissedReviews": ["nodes": pullRequest.reviews.filter { $0.state == "DISMISSED" }.map { review -> [String: Any] in
+                    ["submittedAt": formatter.string(from: review.at)]
+                }],
+                "reviewThreads": ["nodes": pullRequest.threads.map { thread -> [String: Any] in
+                    ["isResolved": thread.isResolved, "comments": ["nodes": thread.comments.map { comment -> [String: Any] in
+                        [
+                            "createdAt": formatter.string(from: comment.drafted ?? comment.at),
+                            "publishedAt": formatter.string(from: comment.at),
+                            "author": ["login": comment.author],
+                        ]
+                    }]]
+                }],
+            ]
+            return ("PR_\(pullRequest.number)", node)
+        }) { _, latest in latest }
     }
 }

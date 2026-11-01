@@ -45,7 +45,16 @@ class SyncStoreTestCase {
         return pullRequest
     }
 
-    func family(_ number: Int, reviewDecision: String?) -> SyncFixture.PullRequest {
-        SyncFixture.PullRequest(number: number, createdAt: ago(hours: 1), reviewDecision: reviewDecision)
+    /// A Family pull request authored by `tomhagen`, the signed-in viewer.
+    func family(_ number: Int, reviews: [SyncFixture.Review] = [], threads: [SyncFixture.Thread] = [], requests: [SyncFixture.Request] = []) -> SyncFixture.PullRequest {
+        SyncFixture.PullRequest(number: number, author: "tomhagen", createdAt: ago(hours: 2), requests: requests, reviews: reviews, threads: threads)
+    }
+
+    func review(_ state: String, minutesAgo: Double = 60) -> SyncFixture.Review {
+        SyncFixture.Review(state: state, at: ago(minutes: minutesAgo))
+    }
+
+    func thread(resolved: Bool = false, _ comments: (author: String, minutesAgo: Double)...) -> SyncFixture.Thread {
+        SyncFixture.Thread(isResolved: resolved, comments: comments.map { SyncFixture.Comment(author: $0.author, at: ago(minutes: $0.minutesAgo)) })
     }
 }
