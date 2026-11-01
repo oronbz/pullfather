@@ -103,6 +103,16 @@ final class ReviewStateTests: SyncStoreTestCase {
         #expect(try await reviewState(of: pullRequest) == .commented)
     }
 
+    @Test func aCommentAfterTheReRequestThatIsAlreadyResolvedKeepsReRequested() async throws {
+        let pullRequest = family(
+            1,
+            threads: [thread(("fredo", 60), ("tomhagen", 40)), thread(resolved: true, ("copilot-pull-request-reviewer", 10))],
+            requests: [.user("fredo", at: ago(minutes: 20))]
+        )
+
+        #expect(try await reviewState(of: pullRequest) == .reRequested)
+    }
+
     @Test func aRequestBeforeAnyFeedbackShowsNothing() async throws {
         #expect(try await reviewState(of: family(1, requests: [.user("fredo", at: ago(minutes: 90))])) == nil)
     }

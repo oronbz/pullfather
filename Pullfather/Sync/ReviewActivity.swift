@@ -65,10 +65,12 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
     }
 
     var state: ReviewState? {
-        guard let latestFeedback = (reviews.map(\.submittedAt) + threads.flatMap(\.feedback)).max() else {
+        guard !reviews.isEmpty || threads.contains(where: { !$0.feedback.isEmpty }) else {
             return nil
         }
-        if let latestRequest = requests.max(), latestRequest > latestFeedback {
+        // A comment already resolved is dealt with, so only standing Feedback can take the pull request back from the reviewers.
+        let standingFeedback = reviews.map(\.submittedAt) + threads.filter { !$0.isResolved }.flatMap(\.feedback)
+        if let latestRequest = requests.max(), standingFeedback.allSatisfy({ $0 < latestRequest }) {
             return .reRequested
         }
         if isChangesRequested {
