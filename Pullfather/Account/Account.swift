@@ -86,6 +86,7 @@ final class Account {
         case .unauthorised: "GitHub didn't accept that token."
         case .rateLimited: "GitHub is rate limiting this token. Try again later."
         case .offline: "Can't reach GitHub. Check your connection."
+        case .missingScope(let scope): "That token is missing the \(scope) scope."
         case .other(let reason): reason
         }
     }

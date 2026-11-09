@@ -60,7 +60,7 @@ Other PR menu bar apps refresh the count and the list separately, so the number 
 
 ## Signing in
 
-Paste a classic GitHub personal access token with `repo` scope. It covers every org you belong to. If you already use the `gh` CLI, you can import its token with one click instead.
+Paste a classic GitHub personal access token with the `repo` and `notifications` scopes. It covers every org you belong to. `notifications` lets the app mute a pull request after it removes you from its reviewers. If you already use the `gh` CLI, you can import its token with one click instead; run `gh auth refresh -s notifications` first so the token has both scopes.
 
 Fine-grained tokens aren't supported. They only cover a single owner, so pull requests from your other orgs wouldn't show.
 

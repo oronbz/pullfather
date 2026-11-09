@@ -32,6 +32,18 @@ final class ReviewerActionTests: SyncStoreTestCase {
         #expect(store.actionFailure == "Removed you from #1, but couldn't mute its notifications. Can't reach GitHub.")
     }
 
+    @Test func aMuteRefusedForAMissingScopeSaysHowToAddIt() async throws {
+        let github = makeGitHub(SyncFixture(business: [requested(1, [.user("tomhagen")])]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        github.failMutations(with: .missingScope("notifications"))
+
+        await store.removeMeFromReviewers("PR_1")?.value
+
+        #expect(store.business?.isEmpty == true)
+        #expect(store.actionFailure == "Removed you from #1, but couldn't mute its notifications. Your token needs the notifications scope: run gh auth refresh -s notifications, or create a new token, then sign in again in Settings.")
+    }
+
     @Test func theRowLeavesBusinessBeforeGitHubAnswers() async throws {
         let github = makeGitHub(SyncFixture(business: [requested(1, [.user("tomhagen")]), requested(2, [.user("tomhagen")])]).data)
         let store = try makeStore(github)

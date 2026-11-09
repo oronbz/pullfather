@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TokenForm: View {
-    static let classicTokenURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo&description=Pullfather")!
+    static let classicTokenURL = URL(string: "https://github.com/settings/tokens/new?scopes=repo,notifications&description=Pullfather")!
 
     let account: Account
     let onSignedIn: () -> Void
@@ -49,7 +49,7 @@ struct TokenForm: View {
             }
 
             HStack(spacing: 4) {
-                Text("Needs a classic token with repo scope.")
+                Text("Needs a classic token with repo and notifications.")
                 Link("Create one", destination: Self.classicTokenURL)
                     .foregroundStyle(Palette.brass)
             }

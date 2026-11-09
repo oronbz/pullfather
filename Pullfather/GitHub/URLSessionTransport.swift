@@ -26,6 +26,9 @@ nonisolated struct URLSessionTransport: GitHubTransport {
             throw .other(errors.firstMessage ?? "GitHub sent an unexpected response.")
         // A rejected mutation still answers 200 with its payload field set to null under "data".
         case 200..<300 where query.hasPrefix("mutation"):
+            if let scope = errors.missingScope {
+                throw .missingScope(scope)
+            }
             if let message = errors.firstMessage {
                 throw .other(message)
             }
@@ -113,6 +116,7 @@ private nonisolated struct GraphQLErrors {
     let hasData: Bool
     let isRateLimited: Bool
     let firstMessage: String?
+    let missingScope: String?
 
     init(_ body: Data) {
         let object = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any]
@@ -120,5 +124,14 @@ private nonisolated struct GraphQLErrors {
         hasData = object?["data"].map { !($0 is NSNull) } ?? false
         isRateLimited = errors.contains { $0["type"] as? String == "RATE_LIMITED" }
         firstMessage = errors.first?["message"] as? String
+        missingScope = errors.lazy
+            .filter { $0["type"] as? String == "INSUFFICIENT_SCOPES" }
+            .compactMap { ($0["message"] as? String).flatMap(Self.firstRequiredScope) }
+            .first
+    }
+
+    /// GitHub names the missing scope only in the message: "…requires one of the following scopes: ['notifications'], but…".
+    private static func firstRequiredScope(in message: String) -> String? {
+        message.firstMatch(of: /following scopes: \['([^']+)'/).map { String($0.1) }
     }
 }

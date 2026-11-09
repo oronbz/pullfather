@@ -155,6 +155,7 @@ final class SyncStore {
         case .offline: "Can't reach GitHub."
         case .rateLimited: "GitHub is rate limiting this token."
         case .unauthorised: "GitHub didn't accept your token."
+        case .missingScope(let scope): "Your token needs the \(scope) scope: run gh auth refresh -s \(scope), or create a new token, then sign in again in Settings."
         case .other(let reason): reason
         }
     }
@@ -191,7 +192,7 @@ final class SyncStore {
         case nil: nil
         case .offline: "Offline"
         case .rateLimited: "Rate limited"
-        case .unauthorised, .other: "Sync failed"
+        case .unauthorised, .missingScope, .other: "Sync failed"
         }
         let detail: String? = switch lastFailure {
         case .rateLimited(let resetsAt?) where resetsAt.timeIntervalSince(now) >= 60:
@@ -230,7 +231,7 @@ final class SyncStore {
         let interval = preferences.refreshInterval.duration
         let now = now()
         switch lastFailure {
-        case nil, .unauthorised:
+        case nil, .unauthorised, .missingScope:
             return interval
         case .rateLimited(let resetsAt?) where resetsAt > now:
             return max(.seconds(resetsAt.timeIntervalSince(now).rounded(.up)), Self.firstRetry)

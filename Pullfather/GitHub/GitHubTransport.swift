@@ -4,6 +4,7 @@ nonisolated enum GitHubFailure: Error, Equatable, Sendable {
     case unauthorised
     case rateLimited(resetsAt: Date?)
     case offline
+    case missingScope(String)
     case other(String)
 }
 
