@@ -19,6 +19,10 @@ nonisolated struct URLSessionTransport: GitHubTransport {
 
         let (data, http) = try await perform(request)
         let errors = GraphQLErrors(data)
+        // GitHub refuses a missing scope before running anything, so the answer has no "data".
+        if let scope = errors.missingScope, (200..<300).contains(http.statusCode) {
+            throw .missingScope(scope)
+        }
         switch http.statusCode {
         case 200..<300 where errors.isRateLimited:
             throw .rateLimited(resetsAt: Self.resetDate(http))
@@ -26,9 +30,6 @@ nonisolated struct URLSessionTransport: GitHubTransport {
             throw .other(errors.firstMessage ?? "GitHub sent an unexpected response.")
         // A rejected mutation still answers 200 with its payload field set to null under "data".
         case 200..<300 where query.hasPrefix("mutation"):
-            if let scope = errors.missingScope {
-                throw .missingScope(scope)
-            }
             if let message = errors.firstMessage {
                 throw .other(message)
             }
