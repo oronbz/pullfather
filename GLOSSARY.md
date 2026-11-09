@@ -7,7 +7,7 @@ A macOS menu bar app that shows the GitHub pull requests waiting on you and the 
 ### Sections
 
 **Business**:
-Open, non-draft pull requests where your review is requested, either by name or through a team you belong to.
+Open, non-draft pull requests where your review is requested, either by name or through a team you belong to. With Include team favors turned off in Settings, a pull request whose only Review Request to you is a Team Review Request is left out, and so is left out of Count and brings no Arrival, even once the setting is back on; asking you by name brings it back.
 _Avoid_: Review queue, inbox, to-review, review requests (as a section name)
 
 **Family**:

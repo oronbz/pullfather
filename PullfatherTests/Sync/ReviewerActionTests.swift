@@ -96,6 +96,23 @@ final class ReviewerActionTests: SyncStoreTestCase {
         #expect(store.removeMeFromReviewers("PR_1") == nil)
     }
 
+    @Test func withTeamFavorsExcludedRemovingMyNamedRequestDropsARowAlsoRequestedThroughATeam() async throws {
+        preferences.includesTeamFavors = false
+        let github = makeGitHub(SyncFixture(business: [requested(1, [.team("consiglieri"), .user("tomhagen")]), requested(2, [.user("tomhagen")])]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        store.select(.business("PR_1"))
+        github.hold()
+
+        let removal = store.removeMeFromReviewers("PR_1")
+
+        #expect(store.business?.map(\.id) == ["PR_2"])
+        #expect(store.selection == .business("PR_2"))
+        github.release()
+        await removal?.value
+        #expect(store.business?.map(\.id) == ["PR_2"])
+    }
+
     @Test func removingTheSelectedRowSelectsTheNextOne() async throws {
         let github = makeGitHub(SyncFixture(business: [requested(1, [.user("tomhagen")]), requested(2, [.user("tomhagen")])]).data)
         let store = try makeStore(github)

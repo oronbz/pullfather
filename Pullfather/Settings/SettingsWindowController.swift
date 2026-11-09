@@ -139,6 +139,15 @@ private struct BusinessPane: View {
                     .controlSize(.small)
                     .tint(Palette.commitRed)
             }
+            NoirRow {
+                Text("Include team favors")
+                Spacer()
+                Toggle("Include team favors", isOn: $preferences.includesTeamFavors)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .tint(Palette.commitRed)
+            }
         }
     }
 }

@@ -32,7 +32,15 @@ final class SyncStore {
     private static let firstRetry = Duration.seconds(15)
 
     private var businessOldestFirst: [BusinessRow]? {
-        oldestFirst?.filter { !approvingIDs.contains($0.id) && (!removingIDs.contains($0.id) || $0.isRequestedThroughTeam) }
+        oldestFirst?.filter { row in
+            guard !approvingIDs.contains(row.id) else { return false }
+            guard !removingIDs.contains(row.id) else { return keepsTeamFavor(row) }
+            return row.isRequestedByName || !row.isRequestedThroughTeam || preferences.includesTeamFavors
+        }
+    }
+
+    private func keepsTeamFavor(_ row: BusinessRow) -> Bool {
+        row.isRequestedThroughTeam && preferences.includesTeamFavors
     }
 
     var business: [BusinessRow]? {
@@ -77,7 +85,7 @@ final class SyncStore {
               let row = oldestFirst?.first(where: { $0.id == id }), row.isRequestedByName, !removingIDs.contains(id), !approvingIDs.contains(id)
         else { return nil }
         let request = RESTRequest.removingRequestedReviewer(viewer, repository: row.repository, number: row.number)
-        if !row.isRequestedThroughTeam {
+        if !keepsTeamFavor(row) {
             selectNeighbour(of: .business(id))
         }
         removingIDs.insert(id)

@@ -77,4 +77,12 @@ final class PreferencesTests {
 
         #expect(Preferences(defaults: defaults).theme == .system)
     }
+
+    @Test func teamFavorsAreIncludedByDefaultAndRememberedAcrossLaunches() {
+        #expect(preferences.includesTeamFavors)
+
+        preferences.includesTeamFavors = false
+
+        #expect(!Preferences(defaults: defaults).includesTeamFavors)
+    }
 }

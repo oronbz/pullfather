@@ -43,6 +43,7 @@ final class Preferences {
     private static let notifiesVerdictsKey = "notifiesVerdicts"
     private static let themeKey = "theme"
     private static let showsBusinessChecksKey = "showsBusinessChecks"
+    private static let includesTeamFavorsKey = "includesTeamFavors"
     private static let showsFamilyChecksKey = "showsFamilyChecks"
 
     @ObservationIgnored private let defaults: UserDefaults
@@ -79,6 +80,10 @@ final class Preferences {
         didSet { defaults.set(showsBusinessChecks, forKey: Self.showsBusinessChecksKey) }
     }
 
+    var includesTeamFavors: Bool {
+        didSet { defaults.set(includesTeamFavors, forKey: Self.includesTeamFavorsKey) }
+    }
+
     var showsFamilyChecks: Bool {
         didSet { defaults.set(showsFamilyChecks, forKey: Self.showsFamilyChecksKey) }
     }
@@ -92,6 +97,7 @@ final class Preferences {
         notifiesVerdicts = defaults.object(forKey: Self.notifiesVerdictsKey) as? Bool ?? true
         theme = defaults.string(forKey: Self.themeKey).flatMap(Theme.init) ?? .noir
         showsBusinessChecks = defaults.object(forKey: Self.showsBusinessChecksKey) as? Bool ?? true
+        includesTeamFavors = defaults.object(forKey: Self.includesTeamFavorsKey) as? Bool ?? true
         showsFamilyChecks = defaults.object(forKey: Self.showsFamilyChecksKey) as? Bool ?? true
     }
 }

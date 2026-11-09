@@ -325,4 +325,21 @@ final class SyncStoreTests: SyncStoreTestCase {
         #expect(store.isStale == (expected != nil))
         #expect(store.statusLine == expected)
     }
+
+    @Test func excludingTeamFavorsHidesRowsRequestedOnlyThroughATeamWithoutASync() async throws {
+        let github = makeGitHub(SyncFixture(business: [
+            SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), pending: [.team("consiglieri")]),
+            SyncFixture.PullRequest(number: 2, createdAt: ago(hours: 2), pending: [.user("tomhagen"), .team("consiglieri")]),
+            SyncFixture.PullRequest(number: 3, createdAt: ago(hours: 3), pending: [.user("tomhagen")]),
+        ]).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+        #expect(store.business?.map(\.number) == [1, 2, 3])
+
+        preferences.includesTeamFavors = false
+
+        #expect(store.business?.map(\.number) == [2, 3])
+        #expect(store.countText == "2")
+        #expect(github.requestCount == 1)
+    }
 }

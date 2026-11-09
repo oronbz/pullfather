@@ -153,4 +153,20 @@ final class ArrivalTests: SyncStoreTestCase {
 
         #expect(arrivals == [["PR_1"]])
     }
+
+    @Test func anExcludedTeamFavorDoesNotArriveEvenWhenTeamFavorsAreIncludedAgain() async throws {
+        preferences.includesTeamFavors = false
+        let teamFavor = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1), pending: [.team("consiglieri")])
+        let github = makeGitHub(SyncFixture(business: []).data)
+        let store = try makeStore(github)
+        await store.requestSync().value
+
+        github.respond(with: SyncFixture(business: [teamFavor]).data)
+        await store.requestSync().value
+        preferences.includesTeamFavors = true
+        await store.requestSync().value
+
+        #expect(store.business?.map(\.number) == [1])
+        #expect(arrivals.isEmpty)
+    }
 }
