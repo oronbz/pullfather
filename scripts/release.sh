@@ -128,6 +128,7 @@ xcodebuild \
     -configuration Release \
     -destination "generic/platform=macOS" \
     -archivePath "$ARCHIVE_PATH" \
+    -derivedDataPath "$WORK_DIR/DerivedData" \
     archive \
     -quiet \
     CODE_SIGN_STYLE=Manual \

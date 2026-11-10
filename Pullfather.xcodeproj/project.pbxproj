@@ -313,7 +313,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Pullfather/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather";
+				INFOPLIST_KEY_CFBundleDisplayName = "The Pullfather Debug";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -322,7 +322,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.12.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.oronbz.Pullfather;
+				PRODUCT_BUNDLE_IDENTIFIER = com.oronbz.Pullfather.debug;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
