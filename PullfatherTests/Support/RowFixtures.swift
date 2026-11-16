@@ -2,11 +2,11 @@ import Foundation
 @testable import Pullfather
 
 extension BusinessRow {
-    static func fixture(_ number: Int, author: String = "sonny", title: String = "Migrate settings screen to SwiftUI") -> BusinessRow {
+    static func fixture(_ number: Int, author: String = "sonny", title: String = "Migrate settings screen to SwiftUI", answer: Answer? = nil) -> BusinessRow {
         BusinessRow(
             id: "PR_\(number)", number: number, title: title, url: URL(string: "https://github.com/corleone/casino/pull/\(number)")!,
             repository: "corleone/casino", branch: "swiftui-settings", author: author, avatarURL: nil, waitingSince: .now, waitingTime: "now",
-            lineChanges: LineChanges(additions: 2, deletions: 4), checks: nil, isRequestedByName: true, isRequestedThroughTeam: false
+            lineChanges: LineChanges(additions: 2, deletions: 4), checks: nil, answer: answer, isRequestedByName: true, isRequestedThroughTeam: false
         )
     }
 }

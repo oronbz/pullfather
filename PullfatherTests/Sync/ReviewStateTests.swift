@@ -156,17 +156,20 @@ final class ReviewStateTests: SyncStoreTestCase {
         #expect(try await reviewState(of: pullRequest) == .reRequested)
     }
 
-    @Test func reviewsAreFetchedForFamilyOnly() async throws {
+    @Test func reviewsAreFetchedForBusinessAndFamilyEachPullRequestOnce() async throws {
         let business = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1))
-        let github = makeGitHub(SyncFixture(business: [business], authored: [family(2)], assigned: [family(3)]).data)
+        let inBoth = SyncFixture.PullRequest(number: 3, createdAt: ago(hours: 1))
+        let github = makeGitHub(SyncFixture(business: [business, inBoth], authored: [family(2)], assigned: [inBoth]).data)
 
         await try makeStore(github).requestSync().value
 
-        #expect(github.reviewBatches == [["PR_2", "PR_3"]])
+        #expect(github.reviewBatches == [["PR_1", "PR_3", "PR_2"]])
     }
 
-    @Test func withoutFamilyNoReviewsAreFetched() async throws {
-        let github = makeGitHub(SyncFixture(business: [SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1))]).data)
+    @Test func reviewsAreNotFetchedForADraftLeftOutOfBusiness() async throws {
+        var draft = SyncFixture.PullRequest(number: 1, createdAt: ago(hours: 1))
+        draft.isDraft = true
+        let github = makeGitHub(SyncFixture(business: [draft]).data)
 
         await try makeStore(github).requestSync().value
 
@@ -179,6 +182,15 @@ final class ReviewStateTests: SyncStoreTestCase {
         await try makeStore(github).requestSync().value
 
         #expect(github.reviewBatches.map(\.count) == [100, 50])
+    }
+
+    @Test func businessAndFamilyShareTheBatchesOfAHundred() async throws {
+        let business = (1...60).map { SyncFixture.PullRequest(number: $0, createdAt: ago(hours: 1)) }
+        let github = makeGitHub(SyncFixture(business: business, authored: (61...120).map { family($0) }).data)
+
+        await try makeStore(github).requestSync().value
+
+        #expect(github.reviewBatches.map(\.count) == [100, 20])
     }
 
     @Test func failingToFetchReviewsFailsTheSyncAndKeepsTheLastGoodFamily() async throws {

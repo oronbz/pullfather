@@ -1,6 +1,6 @@
 import Foundation
 
-/// Fetches reviews and comment threads for Family pull requests by ID, so the cost scales with how many there are rather than with the Sync's search limits.
+/// Fetches reviews and comment threads for Business and Family pull requests by ID, so the cost scales with how many there are rather than with the Sync's search limits.
 /// GitHub prices a query by its connections' parents, not their sizes, so fetching 20 comments per thread costs the same as fetching 1.
 nonisolated enum ReviewQuery {
     static let batchSize = 100
@@ -11,7 +11,11 @@ nonisolated enum ReviewQuery {
             ... on PullRequest {
               id
               latestOpinionatedReviews(first: 20) {
-                nodes { state submittedAt }
+                nodes {
+                  state
+                  submittedAt
+                  author { __typename login }
+                }
               }
               dismissedReviews: reviews(states: [DISMISSED], last: 20) {
                 nodes { submittedAt }
@@ -22,7 +26,7 @@ nonisolated enum ReviewQuery {
                   comments(last: 20) {
                     nodes {
                       publishedAt
-                      author { login }
+                      author { __typename login }
                     }
                   }
                 }
@@ -52,10 +56,25 @@ nonisolated enum ReviewQuery {
     }
 
     private struct Node: Decodable {
+        struct Author: Decodable {
+            let login: String
+            let typename: String?
+
+            enum CodingKeys: String, CodingKey {
+                case login
+                case typename = "__typename"
+            }
+
+            var fetched: FetchedReviews.Author {
+                FetchedReviews.Author(login: login, isBot: typename == "Bot")
+            }
+        }
+
         struct Reviews: Decodable {
             struct Node: Decodable {
                 let state: String?
                 let submittedAt: Date?
+                let author: Author?
             }
 
             let nodes: [Node]
@@ -77,10 +96,6 @@ nonisolated enum ReviewQuery {
                 let author: Author?
             }
 
-            struct Author: Decodable {
-                let login: String
-            }
-
             let nodes: [Node]
         }
 
@@ -92,10 +107,10 @@ nonisolated enum ReviewQuery {
         var fetched: FetchedReviews {
             let decisions = latestOpinionatedReviews.nodes.compactMap { node -> ReviewActivity.Review? in
                 guard let submittedAt = node.submittedAt, let outcome = node.state.flatMap(ReviewActivity.Outcome.init) else { return nil }
-                return ReviewActivity.Review(outcome: outcome, submittedAt: submittedAt)
+                return ReviewActivity.Review(outcome: outcome, submittedAt: submittedAt, author: node.author?.fetched)
             }
             let dismissals = dismissedReviews.nodes.compactMap { node in
-                node.submittedAt.map { ReviewActivity.Review(outcome: .dismissed, submittedAt: $0) }
+                node.submittedAt.map { ReviewActivity.Review(outcome: .dismissed, submittedAt: $0, author: nil) }
             }
             return FetchedReviews(
                 reviews: decisions + dismissals,
@@ -103,7 +118,7 @@ nonisolated enum ReviewQuery {
                     FetchedReviews.Thread(
                         isResolved: thread.isResolved,
                         comments: thread.comments.nodes.compactMap { comment in
-                            comment.publishedAt.map { FetchedReviews.Comment(author: comment.author?.login, publishedAt: $0) }
+                            comment.publishedAt.map { FetchedReviews.Comment(author: comment.author?.fetched, publishedAt: $0) }
                         }
                     )
                 }

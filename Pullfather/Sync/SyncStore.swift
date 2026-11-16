@@ -289,7 +289,9 @@ final class SyncStore {
             let data = try await transport.send(SyncQuery.text, variables: SyncQuery.variables)
             guard let decoded = try? SyncQuery.decode(data) else { throw Self.unexpectedResponse }
             result = decoded
-            fetchedReviews = try await Self.reviews(of: decoded.family.map(\.id), from: transport)
+            var seen: Set<String> = []
+            let reviewIDs = (decoded.business.filter { !$0.isDraft } + decoded.family).map(\.id).filter { seen.insert($0).inserted }
+            fetchedReviews = try await Self.reviews(of: reviewIDs, from: transport)
         } catch {
             failure = (error, token)
             consecutiveFailures += 1
@@ -326,6 +328,7 @@ final class SyncStore {
                     waitingTime: RelativeTime.format(waitingSince, relativeTo: now),
                     lineChanges: pullRequest.lineChanges,
                     checks: pullRequest.checks,
+                    answer: Answer(pullRequest, fetchedReviews[pullRequest.id] ?? FetchedReviews(), viewer: result.viewer),
                     isRequestedByName: pullRequest.pendingReviewers.contains(.user(result.viewer)),
                     isRequestedThroughTeam: pullRequest.pendingReviewers.contains(.team)
                 )

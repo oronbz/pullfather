@@ -21,7 +21,12 @@ struct BusinessSection: View {
             } else {
                 PullRequestRow(id: .business(row.id), pullRequest: row, selection: $selection, actions: actions) {
                     AuthorAvatar(login: row.author, url: row.avatarURL, syncedAt: syncedAt, avatars: avatars)
-                    RowText(title: row.title, metadata: row.reference, lineChanges: row.lineChanges, time: row.waitingTime)
+                    VStack(alignment: .leading, spacing: 1) {
+                        RowText(title: row.title, metadata: row.reference, lineChanges: row.lineChanges, time: row.waitingTime)
+                        if let answer = row.answer {
+                            AnswerLine(answer: answer)
+                        }
+                    }
                     Spacer(minLength: 8)
                     if showsChecks, let checks = row.checks {
                         ChecksIcon(checks: checks)
@@ -35,6 +40,25 @@ struct BusinessSection: View {
                         .help(row.isRequestedByName ? "" : "You were requested through a team. GitHub can only remove the whole team.")
                 }
             }
+        }
+    }
+}
+
+private struct AnswerLine: View {
+    let answer: Answer
+
+    var body: some View {
+        Text("\(Text(answer.opinion.title).fontWeight(.semibold).foregroundStyle(color)) \(answer.attribution)")
+            .font(.system(size: 11.5))
+            .foregroundStyle(Palette.textMuted)
+            .lineLimit(1)
+    }
+
+    private var color: Color {
+        switch answer.opinion {
+        case .approved: Palette.approved
+        case .changesRequested: Palette.amber
+        case .commented: Palette.checksRunning
         }
     }
 }

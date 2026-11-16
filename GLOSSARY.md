@@ -10,6 +10,10 @@ A macOS menu bar app that shows the GitHub pull requests waiting on you and the 
 Open, non-draft pull requests where your review is requested, either by name or through a team you belong to. With Include team favors turned off in Settings, a pull request whose only Review Request to you is a Team Review Request is left out, and so is left out of Count and brings no Arrival, even once the setting is back on; asking you by name brings it back.
 _Avoid_: Review queue, inbox, to-review, review requests (as a section name)
 
+**Favor**:
+One pull request in Business.
+_Avoid_: Review, request (for the pull request itself)
+
 **Family**:
 Open pull requests you authored or are assigned to, drafts included.
 _Avoid_: Assigned, mine, my PRs (as section names)
@@ -29,6 +33,10 @@ A Review Request that reaches you through a team you belong to rather than by na
 **Review State**:
 Whose move it is on a Family pull request, the first that holds of: Re-requested, when anyone asked a person or team for review after the first Feedback and after the latest Feedback that still stands, which is every decision and every comment on a thread still unresolved (asking a bot doesn't count, and a request later withdrawn still does); Changes requested, when a reviewer's latest decision asks for changes; Commented, when an unresolved review thread has a comment from anyone but you, bots and the author of a pull request assigned to you included; Approved; or none. Where the base branch requires reviews, GitHub's own decision says whether it is Approved or Changes requested. An approval GitHub dismissed counts as none.
 
+**Answer**:
+What other reviewers have already said on a Favor, the first that holds of: Changes requested, when another reviewer's latest decision asks for changes; Commented, when an unresolved review thread has a comment from another reviewer; Approved; or none. Your own reviews, the author's and bots' don't count, and neither does an approval GitHub dismissed or a summary-only Commented review. A review counts whether it came before or after the Review Request to you. It names only the reviewers who said it, most recent first.
+_Avoid_: Review State (Family only), status
+
 **Feedback**:
 An approval, a request for changes or a dismissed review, dated when it was submitted, or a comment on a review thread by anyone but you, dated when its review was submitted. A summary-only Commented review is not Feedback, so a bot re-reviewing a push without new comments doesn't end Re-requested. Only a pull request's 50 newest threads and each one's 20 newest comments are read.
 
@@ -43,7 +51,7 @@ _Avoid_: Diff size, diffstat
 ### Time
 
 **Waiting Time**:
-How long a Business pull request has waited since the most recent Review Request to you or your team; a re-request restarts it.
+How long a Favor has waited since the most recent Review Request to you or your team; a re-request restarts it.
 _Avoid_: Age
 
 **Last Activity**:

@@ -50,8 +50,8 @@ class SyncStoreTestCase {
         SyncFixture.PullRequest(number: number, author: "tomhagen", createdAt: ago(hours: 2), requests: requests, reviews: reviews, threads: threads)
     }
 
-    func review(_ state: String, minutesAgo: Double = 60) -> SyncFixture.Review {
-        SyncFixture.Review(state: state, at: ago(minutes: minutesAgo))
+    func review(_ state: String, minutesAgo: Double = 60, by author: String = "fredo", isBot: Bool = false) -> SyncFixture.Review {
+        SyncFixture.Review(state: state, at: ago(minutes: minutesAgo), author: author, isBot: isBot)
     }
 
     func thread(resolved: Bool = false, _ comments: (author: String, minutesAgo: Double)...) -> SyncFixture.Thread {

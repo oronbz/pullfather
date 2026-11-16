@@ -134,17 +134,23 @@ nonisolated enum SyncFixtures {
         },
         "assigned": { "nodes": [] },
         "reviews": {
+          "PR_kwDOAAAAAc5bbbbb": {
+            "id": "PR_kwDOAAAAAc5bbbbb",
+            "latestOpinionatedReviews": { "nodes": [{ "state": "APPROVED", "submittedAt": "2026-09-24T08:41:00Z", "author": { "__typename": "User", "login": "tessio" } }] },
+            "dismissedReviews": { "nodes": [] },
+            "reviewThreads": { "nodes": [] }
+          },
           "PR_kwDOAAAAAc5ddddd": {
             "id": "PR_kwDOAAAAAc5ddddd",
-            "latestOpinionatedReviews": { "nodes": [{ "state": "APPROVED", "submittedAt": "2026-09-21T09:41:00Z" }] },
+            "latestOpinionatedReviews": { "nodes": [{ "state": "APPROVED", "submittedAt": "2026-09-21T09:41:00Z", "author": { "__typename": "User", "login": "fredo" } }] },
             "dismissedReviews": { "nodes": [] },
             "reviewThreads": { "nodes": [] }
           },
           "PR_kwDOAAAAAc5eeeee": {
             "id": "PR_kwDOAAAAAc5eeeee",
-            "latestOpinionatedReviews": { "nodes": [{ "state": "CHANGES_REQUESTED", "submittedAt": "2026-09-23T09:41:00Z" }] },
+            "latestOpinionatedReviews": { "nodes": [{ "state": "CHANGES_REQUESTED", "submittedAt": "2026-09-23T09:41:00Z", "author": { "__typename": "User", "login": "fredo" } }] },
             "dismissedReviews": { "nodes": [] },
-            "reviewThreads": { "nodes": [{ "isResolved": false, "comments": { "nodes": [{ "createdAt": "2026-09-23T09:41:00Z", "publishedAt": "2026-09-23T09:41:00Z", "author": { "login": "fredo" } }] } }] }
+            "reviewThreads": { "nodes": [{ "isResolved": false, "comments": { "nodes": [{ "createdAt": "2026-09-23T09:41:00Z", "publishedAt": "2026-09-23T09:41:00Z", "author": { "__typename": "User", "login": "fredo" } }] } }] }
           }
         }
       }
@@ -162,6 +168,8 @@ nonisolated struct SyncFixture {
     struct Review {
         var state: String
         var at: Date
+        var author = "fredo"
+        var isBot = false
     }
 
     struct Comment {
@@ -169,6 +177,7 @@ nonisolated struct SyncFixture {
         var at: Date
         /// When it was drafted, if earlier than `at`, its publishing as part of a review.
         var drafted: Date?
+        var isBot = false
     }
 
     struct Thread {
@@ -211,7 +220,7 @@ nonisolated struct SyncFixture {
             "business": ["nodes": Self.nodes(business)],
             "authored": ["nodes": Self.nodes(authored)],
             "assigned": ["nodes": Self.nodes(assigned)],
-            "reviews": Self.reviews(authored + assigned),
+            "reviews": Self.reviews(business + authored + assigned),
         ]]
         return try! JSONSerialization.data(withJSONObject: response)
     }
@@ -255,6 +264,10 @@ nonisolated struct SyncFixture {
         }
     }
 
+    private static func author(_ login: String, isBot: Bool) -> [String: String] {
+        ["__typename": isBot ? "Bot" : "User", "login": login]
+    }
+
     /// Answers `ReviewQuery`, keyed by pull request ID; FakeGitHub picks out the IDs each batch asks for.
     private static func reviews(_ pullRequests: [PullRequest]) -> [String: Any] {
         let formatter = ISO8601DateFormatter()
@@ -262,7 +275,7 @@ nonisolated struct SyncFixture {
             let node: [String: Any] = [
                 "id": "PR_\(pullRequest.number)",
                 "latestOpinionatedReviews": ["nodes": pullRequest.reviews.filter { $0.state != "DISMISSED" }.map { review -> [String: Any] in
-                    ["state": review.state, "submittedAt": formatter.string(from: review.at)]
+                    ["state": review.state, "submittedAt": formatter.string(from: review.at), "author": author(review.author, isBot: review.isBot)]
                 }],
                 "dismissedReviews": ["nodes": pullRequest.reviews.filter { $0.state == "DISMISSED" }.map { review -> [String: Any] in
                     ["submittedAt": formatter.string(from: review.at)]
@@ -272,7 +285,7 @@ nonisolated struct SyncFixture {
                         [
                             "createdAt": formatter.string(from: comment.drafted ?? comment.at),
                             "publishedAt": formatter.string(from: comment.at),
-                            "author": ["login": comment.author],
+                            "author": author(comment.author, isBot: comment.isBot),
                         ]
                     }]]
                 }],

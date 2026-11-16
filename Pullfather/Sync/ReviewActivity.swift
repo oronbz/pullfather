@@ -9,8 +9,13 @@ nonisolated enum ReviewState: Equatable, Sendable {
 
 /// Reviews and comment threads on a pull request as `ReviewQuery` fetched them, the viewer's own comments included.
 nonisolated struct FetchedReviews: Equatable, Sendable {
+    struct Author: Equatable, Sendable {
+        let login: String
+        let isBot: Bool
+    }
+
     struct Comment: Equatable, Sendable {
-        let author: String?
+        let author: Author?
         let publishedAt: Date
     }
 
@@ -40,6 +45,8 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
     struct Review: Equatable, Sendable {
         let outcome: Outcome
         let submittedAt: Date
+        /// Missing on a dismissed review, which no rule attributes to anyone.
+        let author: FetchedReviews.Author?
     }
 
     struct Thread: Equatable, Sendable {
@@ -59,7 +66,7 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
         decision = pullRequest.reviewDecision
         reviews = fetched.reviews
         threads = fetched.threads.map { thread in
-            Thread(isResolved: thread.isResolved, feedback: thread.comments.filter { $0.author != viewer }.map(\.publishedAt))
+            Thread(isResolved: thread.isResolved, feedback: thread.comments.filter { $0.author?.login != viewer }.map(\.publishedAt))
         }
         requests = pullRequest.reviewRequests.filter { $0.reviewer != .other }.map(\.requestedAt)
     }

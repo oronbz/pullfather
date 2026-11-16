@@ -26,6 +26,7 @@ struct BusinessRow: Identifiable, Equatable, ListedPullRequest {
     let waitingTime: String
     let lineChanges: LineChanges
     let checks: Checks?
+    let answer: Answer?
     var isRequestedByName: Bool
     let isRequestedThroughTeam: Bool
 
@@ -70,11 +71,11 @@ enum SelectionMove {
 extension BusinessRow {
     static let previews = [
         BusinessRow(id: "3", number: 412, title: "Fix race in token refresh", url: URL(string: "https://github.com/corleone/olive-oil/pull/412")!,
-                    repository: "corleone/olive-oil", branch: "feature/GETT-171154-rider-in-app-voice-contact-with-the-driver", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", lineChanges: LineChanges(additions: 48, deletions: 12), checks: .passing, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/olive-oil", branch: "feature/GETT-171154-rider-in-app-voice-contact-with-the-driver", author: "mike-corleone", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1001?s=60&v=4"), waitingSince: .now, waitingTime: "2h", lineChanges: LineChanges(additions: 48, deletions: 12), checks: .passing, answer: Answer(opinion: .approved, reviewers: ["tessio", "clemenza", "fredo", "connie"]), isRequestedByName: true, isRequestedThroughTeam: false),
         BusinessRow(id: "2", number: 1088, title: "Migrate settings screen to SwiftUI", url: URL(string: "https://github.com/corleone/casino/pull/1088")!,
-                    repository: "corleone/casino", branch: "swiftui-settings", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", lineChanges: LineChanges(additions: 1240, deletions: 310), checks: .running, isRequestedByName: false, isRequestedThroughTeam: true),
+                    repository: "corleone/casino", branch: "swiftui-settings", author: "sonny", avatarURL: URL(string: "https://avatars.githubusercontent.com/u/1002?s=60&v=4"), waitingSince: .now, waitingTime: "5h", lineChanges: LineChanges(additions: 1240, deletions: 310), checks: .running, answer: Answer(opinion: .changesRequested, reviewers: ["tessio"]), isRequestedByName: false, isRequestedThroughTeam: true),
         BusinessRow(id: "1", number: 1091, title: "Bump fastlane to latest", url: URL(string: "https://github.com/corleone/casino/pull/1091")!,
-                    repository: "corleone/casino", branch: "bump-fastlane", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", lineChanges: LineChanges(additions: 2, deletions: 2), checks: .failing, isRequestedByName: true, isRequestedThroughTeam: false),
+                    repository: "corleone/casino", branch: "bump-fastlane", author: "luca-brasi", avatarURL: nil, waitingSince: .now, waitingTime: "1d", lineChanges: LineChanges(additions: 2, deletions: 2), checks: .failing, answer: nil, isRequestedByName: true, isRequestedThroughTeam: false),
     ]
 }
 
