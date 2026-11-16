@@ -4,6 +4,7 @@ struct PanelSection<Row: Identifiable, RowView: View>: View {
     let title: String
     let caption: String?
     let emptyText: String
+    var emptyIllustration: ImageResource?
     let rows: [Row]?
     @ViewBuilder let row: (Row) -> RowView
 
@@ -21,11 +22,20 @@ struct PanelSection<Row: Identifiable, RowView: View>: View {
             .padding(.horizontal, 10)
             if let rows {
                 if rows.isEmpty {
-                    Text(emptyText)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Palette.textSecondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                    if let emptyIllustration {
+                        VStack(spacing: 10) {
+                            Image(emptyIllustration)
+                                .resizable()
+                                .frame(width: 80, height: 80)
+                                .accessibilityHidden(true)
+                            emptyLabel
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                    } else {
+                        emptyLabel
+                            .padding(.vertical, 6)
+                    }
                 } else {
                     VStack(spacing: 2) {
                         ForEach(rows, content: row)
@@ -33,6 +43,13 @@ struct PanelSection<Row: Identifiable, RowView: View>: View {
                 }
             }
         }
+    }
+
+    private var emptyLabel: some View {
+        Text(emptyText)
+            .font(.system(size: 13))
+            .foregroundStyle(Palette.textSecondary)
+            .padding(.horizontal, 10)
     }
 }
 

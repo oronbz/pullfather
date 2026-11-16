@@ -19,6 +19,7 @@ This covers the icon, the glyph and how the popover looks. Behaviour (context me
 | `AppIcon.icns` | Built from the iconset with `iconutil` |
 | `MenuBarIcon.svg` | Menu bar glyph, 18×18 vector, black on transparent. Use as a **Template Image** (Render As: Template) with Preserve Vector Data |
 | `MenuBarIcon.png`, `MenuBarIcon@2x.png` | Raster fallbacks of the glyph |
+| `EmptyBusiness.svg` | The Don with both palms on his cheeks, 80pt, shown when Business is empty. Two fixed colours (Bone disc, Hat black ink), not a template. Drawn with image generation, then traced with `potrace` |
 | `popover-reference.png` | Popover mockup render (2×) |
 | `menubar-glyph-reference.png` | Glyph on light/dark bars, idle and with a count |
 
@@ -45,6 +46,7 @@ A noir fedora with a git branch tucked in the hatband like a feather. The branch
 
 - Header: mini app icon, "The Pullfather" in Playfair Display 700 at 20pt, tagline in Playfair Display italic at 13pt, refresh button.
 - **BUSINESS**: PRs awaiting your review (avatar, title, repo #number · +added −removed · age, CI status). A PR other reviewers have answered gets a third line at metadata size: the Answer in its Family badge colour, semibold, then "by" and up to two reviewers with a count of the rest, in muted text ("Approved by tessio, hagen +2").
+- With nothing awaiting review, Business shows `EmptyBusiness.svg` at 80pt, centred above "No favors asked. Enjoy the cannoli." Family's empty line stays plain text.
 - **FAMILY**: your own PRs (title, repo #number · +added −removed · age, review badge, CI status).
 - Line changes sit between the number and the age, and the age is in muted text. Line changes are in additions green and deletions red, abbreviated past 999 (`+1.2k`). When the row is too narrow, they drop out rather than truncate the repo and number.
 - Footer: Open GitHub ⌘O, Settings… ⌘,, Quit The Pullfather ⌘Q. When a newer release is out, "Update to x.y.z" ⌘U comes first: clicking it downloads the release with Homebrew, quits, upgrades and relaunches; right-clicking offers the release notes and the upgrade command to copy. The same update also shows as a dismissible row at the top of the list, styled like the notifications hint; dismissing it hides that version for good, until a newer one is published.

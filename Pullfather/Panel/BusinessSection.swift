@@ -14,6 +14,7 @@ struct BusinessSection: View {
             title: "Business",
             caption: rows.flatMap { $0.isEmpty ? nil : "\($0.count) awaiting your review" },
             emptyText: "No favors asked. Enjoy the cannoli.",
+            emptyIllustration: .emptyBusiness,
             rows: rows
         ) { row in
             if approvalCandidate == row.id {
