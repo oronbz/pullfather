@@ -20,4 +20,4 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 
 ### Domain docs
 
-Single-context: one `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Name domain concepts (identifiers, tests, tickets, PR text) with the terms in root `GLOSSARY.md`; never use a word from its _Avoid_ lists. ADRs live in `docs/adr/`; see `docs/agents/domain.md`.
