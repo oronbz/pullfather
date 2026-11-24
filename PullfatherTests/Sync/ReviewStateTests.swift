@@ -129,6 +129,19 @@ final class ReviewStateTests: SyncStoreTestCase {
         #expect(try await reviewState(of: pullRequest) == .commented)
     }
 
+    @Test func askingAPersonAfterOnlyCopilotsCommentsIsNotAReRequest() async throws {
+        let copilot = SyncFixture.Thread(comments: [SyncFixture.Comment(author: "copilot-pull-request-reviewer", at: ago(minutes: 30), isBot: true)])
+        let pullRequest = family(1, threads: [copilot], requests: [.bot("copilot-pull-request-reviewer", at: ago(minutes: 40)), .user("fredo", at: ago(minutes: 10))])
+
+        #expect(try await reviewState(of: pullRequest) == .commented)
+    }
+
+    @Test func askingAPersonAfterOnlyCopilotsReviewIsNotAReRequest() async throws {
+        let pullRequest = family(1, reviews: [review("CHANGES_REQUESTED", minutesAgo: 30, by: "copilot-pull-request-reviewer", isBot: true)], requests: [.user("fredo", at: ago(minutes: 10))])
+
+        #expect(try await reviewState(of: pullRequest) == .changesRequested)
+    }
+
     @Test func aReplyAfterTheReRequestShowsCommentedAgain() async throws {
         let pullRequest = family(1, threads: [thread(("fredo", 30), ("tomhagen", 20), ("fredo", 5))], requests: [.user("fredo", at: ago(minutes: 10))])
 

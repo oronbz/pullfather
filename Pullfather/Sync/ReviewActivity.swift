@@ -49,10 +49,15 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
         let author: FetchedReviews.Author?
     }
 
+    /// A comment on a review thread by anyone but the viewer, dated when its review was submitted.
+    struct Comment: Equatable, Sendable {
+        let at: Date
+        let isFromBot: Bool
+    }
+
     struct Thread: Equatable, Sendable {
         let isResolved: Bool
-        /// When anyone but the viewer commented on it.
-        let feedback: [Date]
+        let feedback: [Comment]
     }
 
     /// GitHub's own decision, present only where the base branch requires reviews.
@@ -66,18 +71,19 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
         decision = pullRequest.reviewDecision
         reviews = fetched.reviews
         threads = fetched.threads.map { thread in
-            Thread(isResolved: thread.isResolved, feedback: thread.comments.filter { $0.author?.login != viewer }.map(\.publishedAt))
+            Thread(
+                isResolved: thread.isResolved,
+                feedback: thread.comments.filter { $0.author?.login != viewer }.map { Comment(at: $0.publishedAt, isFromBot: $0.author?.isBot ?? false) }
+            )
         }
         requests = pullRequest.reviewRequests.filter { $0.reviewer != .other }.map(\.requestedAt)
     }
 
     var state: ReviewState? {
-        guard let firstFeedback = (reviews.map(\.submittedAt) + threads.flatMap(\.feedback)).min() else {
+        guard !reviews.isEmpty || threads.contains(where: { !$0.feedback.isEmpty }) else {
             return nil
         }
-        // A comment already resolved is dealt with, so only standing Feedback can take the pull request back from the reviewers.
-        let standingFeedback = reviews.map(\.submittedAt) + threads.filter { !$0.isResolved }.flatMap(\.feedback)
-        if let latestRequest = requests.max(), latestRequest > firstFeedback, standingFeedback.allSatisfy({ $0 < latestRequest }) {
+        if isReRequested {
             return .reRequested
         }
         if isChangesRequested {
@@ -90,6 +96,18 @@ nonisolated struct ReviewActivity: Equatable, Sendable {
             return .approved
         }
         return nil
+    }
+
+    /// Only a person's Feedback can be asked back for: a request that follows nothing but a bot's is a person's first.
+    private var isReRequested: Bool {
+        let peopleFeedback = reviews.filter { $0.author?.isBot != true }.map(\.submittedAt)
+            + threads.flatMap(\.feedback).filter { !$0.isFromBot }.map(\.at)
+        guard let latestRequest = requests.max(), let firstFeedback = peopleFeedback.min(), latestRequest > firstFeedback else {
+            return false
+        }
+        // A comment already resolved is dealt with, so only standing Feedback can take the pull request back from the reviewers.
+        let standingFeedback = reviews.map(\.submittedAt) + threads.filter { !$0.isResolved }.flatMap(\.feedback).map(\.at)
+        return standingFeedback.allSatisfy { $0 < latestRequest }
     }
 
     private var isChangesRequested: Bool {
